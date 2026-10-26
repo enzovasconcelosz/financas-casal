@@ -12,6 +12,6 @@
    Deixando vazio, o app funciona como antes: só neste aparelho.
    ========================================================================== */
 window.FC_NUVEM = {
-  apiKey: '',
-  projectId: ''
+  apiKey: 'AIzaSyAhfbA2Ln_P73Fe99LkwiQQN38PWAzCrto',
+  projectId: 'financas-casal-fbd8f'
 };
