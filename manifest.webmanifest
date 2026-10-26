@@ -1,0 +1,45 @@
+{
+  "name": "Finanças do Casal",
+  "short_name": "Finanças",
+  "description": "Controle de gastos, cartão e investimentos do casal, guardado no próprio aparelho.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Novo lançamento",
+      "short_name": "Lançar",
+      "url": "./index.html#/visao"
+    },
+    {
+      "name": "Investimentos",
+      "short_name": "Investir",
+      "url": "./index.html#/investimentos"
+    },
+    {
+      "name": "Caixa de entrada",
+      "short_name": "Caixa",
+      "url": "./index.html#/caixa"
+    }
+  ]
+}

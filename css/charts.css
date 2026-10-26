@@ -1,0 +1,119 @@
+/* ==========================================================================
+   charts.css — graficos SVG
+   ========================================================================== */
+
+.chart {
+  position: relative;
+  width: 100%;
+}
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.chart__grid line { stroke: var(--grid-line); stroke-width: 1; }
+.chart__axis text {
+  fill: var(--chart-ink);
+  font-size: 10.5px;
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.chart__axis line { stroke: var(--line); stroke-width: 1; }
+
+.chart__line { fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.chart__line--dash { stroke-dasharray: 5 4; stroke-width: 1.8; opacity: .8; }
+.chart__area { opacity: .9; }
+
+.chart__bar { transition: opacity var(--t-fast) var(--ease); rx: 3; }
+.chart__bar:hover { opacity: .78; }
+
+.chart__dot { stroke: var(--surface); stroke-width: 2; }
+
+.chart__zero { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: .55; }
+
+.chart__hover {
+  fill: var(--text);
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.chart__hover.is-on { opacity: .06; }
+
+.chart__cursor { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* legenda */
+.legend {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4);
+  margin-top: var(--sp-3);
+  font-size: var(--fs-xs); color: var(--text-2);
+}
+.legend__i { display: inline-flex; align-items: center; gap: 6px; }
+.legend__sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.legend__sw--line { height: 3px; width: 14px; border-radius: 2px; }
+
+/* dica flutuante */
+.chart__tip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  min-width: 132px;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-3);
+  border: 1px solid var(--line-hi);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-2);
+  font-size: var(--fs-xs);
+  transform: translate(-50%, calc(-100% - 12px));
+  opacity: 0;
+  transition: opacity var(--t-fast) var(--ease);
+  white-space: nowrap;
+}
+.chart__tip.is-on { opacity: 1; }
+.chart__tip__t { font-weight: 680; margin-bottom: 3px; text-transform: capitalize; }
+.chart__tip__r { display: flex; align-items: center; gap: 6px; justify-content: space-between; gap: var(--sp-3); }
+.chart__tip__k { display: inline-flex; align-items: center; gap: 5px; color: var(--text-2); }
+.chart__tip__sw { width: 8px; height: 8px; border-radius: 2px; flex: none; }
+.chart__tip__v { font-variant-numeric: tabular-nums; font-weight: 650; }
+
+/* donut */
+.donut__wrap { position: relative; display: grid; place-items: center; }
+.donut__center {
+  position: absolute; text-align: center; pointer-events: none;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.donut__k { font-size: var(--fs-xs); color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; font-weight: 620; }
+.donut__v { font-size: var(--fs-xl); font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.donut__seg {
+  transition: opacity var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+  transform-origin: center;
+  cursor: pointer;
+}
+.donut__seg:hover { opacity: .82; }
+.donut__seg.is-dim { opacity: .3; }
+
+/* sparkline dentro de KPI */
+.spark svg { height: 34px; }
+.spark__line { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* barras horizontais comparativas */
+.vs { display: flex; flex-direction: column; gap: var(--sp-3); }
+.vs__row { display: grid; grid-template-columns: 1fr 12px 1fr; align-items: center; gap: var(--sp-2); }
+.vs__side { display: flex; align-items: center; gap: var(--sp-2); min-width: 0; }
+.vs__side--l { justify-content: flex-end; }
+.vs__bar { height: 20px; border-radius: 5px; min-width: 2px; transition: width var(--t-slow) var(--ease); }
+.vs__v { font-size: var(--fs-xs); font-variant-numeric: tabular-nums; color: var(--text-2); white-space: nowrap; }
+.vs__lbl { text-align: center; font-size: var(--fs-xs); color: var(--text-3); }
+
+/* mapa de calor do mes */
+.heat { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.heat__d {
+  aspect-ratio: 1; border-radius: 5px;
+  background: var(--surface-3);
+  display: grid; place-items: center;
+  font-size: 9.5px; color: var(--text-3);
+  position: relative;
+  transition: transform var(--t-fast) var(--ease);
+}
+.heat__d:hover { transform: scale(1.12); z-index: 2; }
+.heat__d.is-today { box-shadow: 0 0 0 1.5px var(--accent); }
+.heat__hd { text-align: center; font-size: 9.5px; color: var(--text-3); font-weight: 650; text-transform: uppercase; }
+
+/* escala de calor */
+.heatscale { display: flex; align-items: center; gap: 5px; font-size: var(--fs-xs); color: var(--text-3); }
+.heatscale__b { width: 14px; height: 9px; border-radius: 3px; }

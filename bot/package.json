@@ -1,0 +1,17 @@
+{
+  "name": "financas-casal-bot",
+  "version": "1.0.0",
+  "description": "Bot de WhatsApp que anota gastos na fila do Finanças do Casal",
+  "main": "server.js",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node --env-file=.env server.js",
+    "start:sem-env": "node server.js",
+    "teste": "node teste-parser.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {}
+}

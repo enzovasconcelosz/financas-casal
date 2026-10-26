@@ -1,0 +1,74 @@
+/* ==========================================================================
+   print.css — relatorio para impressao / salvar em PDF pelo navegador
+   ========================================================================== */
+
+.printroot { display: none; }
+
+@media print {
+  @page { size: A4; margin: 12mm 10mm; }
+
+  html, body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  /* esconde a interface */
+  .topbar, .tabs, .bottomnav, .fab, .toasts, .modal-scrim, .lock,
+  .rowacts, .quickrow, .page-head__actions, .card__tools, .no-print {
+    display: none !important;
+  }
+
+  .app { display: none !important; }
+
+  .printroot {
+    display: block !important;
+    font-family: var(--font-sans);
+    color: #111;
+    font-size: 10.5pt;
+  }
+
+  .prt__head {
+    display: flex; align-items: flex-end; gap: 12px;
+    border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 14px;
+  }
+  .prt__title { font-size: 17pt; font-weight: 700; margin: 0; }
+  .prt__sub { font-size: 9.5pt; color: #555; }
+  .prt__meta { margin-left: auto; text-align: right; font-size: 8.5pt; color: #555; }
+
+  .prt__sec { margin-bottom: 14px; break-inside: avoid; }
+  .prt__sec h2 {
+    font-size: 11.5pt; margin: 0 0 6px;
+    border-bottom: 1px solid #bbb; padding-bottom: 3px;
+  }
+
+  .prt__kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .prt__kpi { border: 1px solid #ccc; border-radius: 5px; padding: 7px 9px; }
+  .prt__kpi__k { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .04em; color: #666; }
+  .prt__kpi__v { font-size: 13pt; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  .prt__tbl { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  .prt__tbl th {
+    text-align: left; background: #f0f0f0; border: 1px solid #ccc;
+    padding: 4px 6px; font-size: 8pt; text-transform: uppercase; letter-spacing: .03em;
+  }
+  .prt__tbl td { border: 1px solid #ddd; padding: 3.5px 6px; }
+  .prt__tbl td.num, .prt__tbl th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .prt__tbl tfoot td { font-weight: 700; background: #f6f6f6; border-top: 1.5px solid #999; }
+  .prt__tbl tbody tr:nth-child(even) { background: #fafafa; }
+
+  .prt__two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .prt__break { break-before: page; }
+  .prt__foot {
+    margin-top: 16px; padding-top: 6px; border-top: 1px solid #ccc;
+    font-size: 7.5pt; color: #777; text-align: center;
+  }
+  .prt__pos { color: #0a7a52; font-weight: 700; }
+  .prt__neg { color: #b62334; font-weight: 700; }
+
+  .prt__bars { display: flex; flex-direction: column; gap: 4px; }
+  .prt__barrow { display: grid; grid-template-columns: 90px 1fr 70px; align-items: center; gap: 6px; font-size: 8.5pt; }
+  .prt__bar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+  .prt__bar span { display: block; height: 100%; background: #444; }
+
+  a { color: #111 !important; text-decoration: none !important; }
+}

@@ -1,0 +1,166 @@
+/* ==========================================================================
+   tokens.css — design system
+   Tema escuro (padrão) e claro. Paletas de destaque por pessoa.
+   ========================================================================== */
+
+:root {
+  /* tipografia */
+  --font-sans: "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system,
+               "Helvetica Neue", Arial, sans-serif;
+  --font-num: "Segoe UI Variable", "SF Mono", ui-monospace, "Roboto Mono", monospace;
+
+  --fs-xs: .7rem;
+  --fs-sm: .8rem;
+  --fs-md: .875rem;
+  --fs-base: .95rem;
+  --fs-lg: 1.1rem;
+  --fs-xl: 1.4rem;
+  --fs-2xl: 1.9rem;
+  --fs-3xl: 2.5rem;
+
+  /* espaçamento */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 44px;
+
+  /* raios */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px; --r-full: 999px;
+
+  /* camadas */
+  --z-nav: 40; --z-fab: 45; --z-modal: 60; --z-toast: 70; --z-lock: 80;
+
+  /* movimento */
+  --ease: cubic-bezier(.25, .8, .35, 1);
+  --t-fast: .12s; --t-med: .22s; --t-slow: .4s;
+
+  /* larguras */
+  --maxw: 1360px;
+  --topbar-h: 58px;
+  --tabs-h: 52px;
+}
+
+/* --------------------------------------------------------------------------
+   TEMA ESCURO (padrão)
+   -------------------------------------------------------------------------- */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg:        #0b0f14;
+  --bg-deep:   #070a0e;
+  --surface:   #11161d;
+  --surface-2: #161d26;
+  --surface-3: #1d2631;
+  --surface-hi:#232d3a;
+
+  --line:      #232c38;
+  --line-soft: #1a2129;
+  --line-hi:   #32405180;
+
+  --text:      #e8edf4;
+  --text-2:    #9aa8bb;
+  --text-3:    #64748b;
+  --text-inv:  #0b0f14;
+
+  --pos:       #1ecb8b;
+  --pos-soft:  #1ecb8b22;
+  --pos-ink:   #7ff0c4;
+  --neg:       #ff5b6e;
+  --neg-soft:  #ff5b6e22;
+  --neg-ink:   #ffa7b1;
+  --warn:      #ffb020;
+  --warn-soft: #ffb02022;
+  --info:      #47a3ff;
+  --info-soft: #47a3ff22;
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 6px 20px -6px rgba(0,0,0,.55);
+  --shadow-3: 0 24px 60px -18px rgba(0,0,0,.7);
+
+  --grid-line: #1b2330;
+  --chart-ink: #7c8ba1;
+
+  --scrim: rgba(4,7,11,.72);
+  --glass: rgba(17,22,29,.86);
+}
+
+/* --------------------------------------------------------------------------
+   TEMA CLARO
+   -------------------------------------------------------------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg:        #f4f6fa;
+  --bg-deep:   #e9edf4;
+  --surface:   #ffffff;
+  --surface-2: #f7f9fc;
+  --surface-3: #eff3f9;
+  --surface-hi:#e6ecf5;
+
+  --line:      #dde4ee;
+  --line-soft: #eaeff7;
+  --line-hi:   #c9d4e480;
+
+  --text:      #0f1a2a;
+  --text-2:    #55637a;
+  --text-3:    #8794a8;
+  --text-inv:  #ffffff;
+
+  --pos:       #0f9d6b;
+  --pos-soft:  #0f9d6b1f;
+  --pos-ink:   #06724c;
+  --neg:       #d93b4e;
+  --neg-soft:  #d93b4e1c;
+  --neg-ink:   #a41e30;
+  --warn:      #b8730a;
+  --warn-soft: #ffb0201f;
+  --info:      #1f6fd0;
+  --info-soft: #1f6fd01c;
+
+  --shadow-1: 0 1px 2px rgba(16,32,60,.08);
+  --shadow-2: 0 8px 24px -10px rgba(16,32,60,.18);
+  --shadow-3: 0 24px 60px -20px rgba(16,32,60,.28);
+
+  --grid-line: #e6ecf4;
+  --chart-ink: #7b8798;
+
+  --scrim: rgba(24,34,52,.42);
+  --glass: rgba(255,255,255,.88);
+}
+
+/* --------------------------------------------------------------------------
+   PALETAS DE DESTAQUE  (usadas por pessoa: data-accent="...")
+   --accent      cor principal
+   --accent-2    cor do painel de crédito
+   --accent-3    cor do painel de terceiros
+   -------------------------------------------------------------------------- */
+[data-accent="esmeralda"] { --accent:#1ecb8b; --accent-2:#3fa9f5; --accent-3:#a78bfa; }
+[data-accent="violeta"]   { --accent:#a78bfa; --accent-2:#f472b6; --accent-3:#38bdf8; }
+[data-accent="oceano"]    { --accent:#38bdf8; --accent-2:#22d3ee; --accent-3:#818cf8; }
+[data-accent="coral"]     { --accent:#fb7185; --accent-2:#fb923c; --accent-3:#c084fc; }
+[data-accent="ambar"]     { --accent:#f5b544; --accent-2:#fb7185; --accent-3:#34d399; }
+[data-accent="indigo"]    { --accent:#818cf8; --accent-2:#38bdf8; --accent-3:#f472b6; }
+[data-accent="jade"]      { --accent:#2dd4bf; --accent-2:#4ade80; --accent-3:#60a5fa; }
+[data-accent="rosa"]      { --accent:#f472b6; --accent-2:#a78bfa; --accent-3:#fb923c; }
+[data-accent="grafite"]   { --accent:#94a3b8; --accent-2:#64748b; --accent-3:#cbd5e1; }
+[data-accent="cobre"]     { --accent:#e8875a; --accent-2:#eab308; --accent-3:#22d3ee; }
+
+/* raiz sempre tem uma cor de destaque padrão */
+:root { --accent:#1ecb8b; --accent-2:#3fa9f5; --accent-3:#a78bfa; }
+
+/* derivados do destaque */
+[data-accent], :root {
+  --accent-soft:  color-mix(in srgb, var(--accent) 16%, transparent);
+  --accent-line:  color-mix(in srgb, var(--accent) 38%, transparent);
+  --accent-ink:   color-mix(in srgb, var(--accent) 80%, var(--text));
+  --accent2-soft: color-mix(in srgb, var(--accent-2) 16%, transparent);
+  --accent2-line: color-mix(in srgb, var(--accent-2) 38%, transparent);
+  --accent3-soft: color-mix(in srgb, var(--accent-3) 16%, transparent);
+  --accent3-line: color-mix(in srgb, var(--accent-3) 38%, transparent);
+}
+
+/* paleta categórica dos gráficos (12 tons, legível nos dois temas) */
+:root {
+  --c1:#1ecb8b; --c2:#3fa9f5; --c3:#a78bfa; --c4:#f5b544;
+  --c5:#fb7185; --c6:#2dd4bf; --c7:#818cf8; --c8:#fb923c;
+  --c9:#4ade80; --c10:#f472b6; --c11:#22d3ee; --c12:#c084fc;
+}

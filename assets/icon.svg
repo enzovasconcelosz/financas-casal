@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#11202b"/>
+      <stop offset="100%" stop-color="#070d12"/>
+    </linearGradient>
+    <linearGradient id="traco" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1ecb8b"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#fundo)"/>
+
+  <path d="M256 404S118 316 118 216a82 82 0 0 1 138-53 82 82 0 0 1 138 53c0 100-138 188-138 188Z"
+        fill="none" stroke="url(#traco)" stroke-width="26" stroke-linejoin="round"/>
+
+  <path d="M162 250h44l28-58 38 108 30-50h48"
+        fill="none" stroke="#e8edf4" stroke-width="22"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,21 @@
+# segredos do bot
+bot/.env
+bot/fila.json
+
+# backups locais (contêm seus dados financeiros)
+*.backup.json
+financas-casal-*.json
+
+# sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editores
+.vscode/
+.idea/
+*.swp
+
+# node (só se você mexer no bot)
+node_modules/
+npm-debug.log*
