@@ -458,6 +458,7 @@
   function importar(dados, modo) {
     if (!dados || typeof dados !== 'object') throw new Error('Arquivo inválido.');
     if (!dados.casal || !dados.lancamentos) throw new Error('Este arquivo não parece um backup do app.');
+    if (modo === 'planilha') return importarPlanilha(dados);
 
     var novo = migrar(JSON.parse(JSON.stringify(dados)));
     delete novo._exportado;
@@ -493,6 +494,76 @@
       }
     });
     res.modo = 'juntar';
+    return res;
+  }
+
+  /**
+   * Traz os lançamentos da planilha para o painel ATUAL, sem mexer no resto:
+   *   - pessoas, categorias, cartões e terceiros são casados pelo NOME
+   *     (os ids do arquivo não valem no painel de vocês);
+   *   - lançamentos que vieram da planilha antes são trocados pelos novos;
+   *   - o que foi lançado no app, assinaturas, investimentos e ajustes ficam.
+   * Rodar de novo com a planilha atualizada não duplica.
+   */
+  function importarPlanilha(arq) {
+    if (!estado) throw new Error('Entre no painel antes de importar.');
+    var norm = fmt.norm;
+    var primeiro = function (p) { return norm(p.apelido || p.nome).split(' ')[0]; };
+    var res = { lancamentos: 0, trocados: 0, criados: { categorias: 0, cartoes: 0, terceiros: 0 }, doAppNosMeses: 0, modo: 'planilha' };
+
+    atualizar(function (s) {
+      /* pessoas: pelo primeiro nome; se não achar, pela posição */
+      var mapaP = {};
+      arq.casal.pessoas.forEach(function (p, i) {
+        var achou = s.casal.pessoas.filter(function (x) {
+          return primeiro(x) === primeiro(p) || norm(x.nome).split(' ')[0] === norm(p.nome).split(' ')[0];
+        })[0];
+        mapaP[p.id] = (achou || s.casal.pessoas[i] || s.casal.pessoas[0]).id;
+      });
+
+      function casar(lista, destino, chaveTipo, ajustar) {
+        var mapa = {};
+        (lista || []).forEach(function (x) {
+          var achou = destino.filter(function (y) { return norm(y.nome) === norm(x.nome); })[0];
+          if (!achou) {
+            achou = Object.assign({}, x, { id: x.id && x.id.indexOf('_pl_') > 0 ? x.id : fmt.uid(chaveTipo) });
+            if (ajustar) ajustar(achou);
+            destino.push(achou);
+            res.criados[chaveTipo === 'cat' ? 'categorias' : chaveTipo === 'card' ? 'cartoes' : 'terceiros']++;
+          }
+          mapa[x.id] = achou.id;
+        });
+        return mapa;
+      }
+      var mapaC = casar(arq.categorias, s.categorias, 'cat');
+      var mapaK = casar(arq.cartoes, s.cartoes, 'card', function (k) { k.pessoaId = mapaP[k.pessoaId] || k.pessoaId; });
+      var mapaT = casar(arq.terceiros, s.terceiros, 'ter');
+
+      var antes = s.lancamentos.length;
+      s.lancamentos = s.lancamentos.filter(function (l) { return l.origem !== 'planilha'; });
+      res.trocados = antes - s.lancamentos.length;
+
+      var mesesPlanilha = {};
+      (arq.lancamentos || []).forEach(function (l) {
+        var n = JSON.parse(JSON.stringify(l));
+        n.origem = 'planilha';
+        n.pessoaId = mapaP[l.pessoaId] || l.pessoaId;
+        n.categoriaId = l.categoriaId ? (mapaC[l.categoriaId] || null) : null;
+        n.cartaoId = l.cartaoId ? (mapaK[l.cartaoId] || null) : null;
+        n.terceiroId = l.terceiroId ? (mapaT[l.terceiroId] || null) : null;
+        s.lancamentos.push(n);
+        mesesPlanilha[n.mes] = true;
+        res.lancamentos++;
+      });
+
+      /* o que foi lançado no app nos mesmos meses pode estar também na planilha */
+      res.doAppNosMeses = s.lancamentos.filter(function (l) {
+        return l.origem !== 'planilha' && l.origem !== 'assinatura' && mesesPlanilha[l.mes];
+      }).length;
+
+      var ini = Object.keys(mesesPlanilha).sort()[0];
+      if (ini && (!s.meta.mesInicial || ini < s.meta.mesInicial)) s.meta.mesInicial = ini;
+    });
     return res;
   }
 

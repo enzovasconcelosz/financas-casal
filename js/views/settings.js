@@ -422,6 +422,9 @@
 
   function perguntarImportacao(dados) {
     var qtd = (dados.lancamentos || []).length;
+    var daPlanilha = dados._origem === 'planilha' ||
+      (dados.lancamentos || []).some(function (l) { return l.origem === 'planilha'; });
+    if (daPlanilha) return perguntarImportacaoPlanilha(dados, qtd);
     ui.modal({
       titulo: 'Importar backup',
       largura: 'slim',
@@ -458,6 +461,63 @@
               } catch (e) { ui.toast(e.message, 'err'); }
             }
           }, 'Substituir tudo')
+        ];
+      }
+    });
+  }
+
+  /** Arquivo gerado da planilha: o caminho recomendado é atualizar, não substituir */
+  function perguntarImportacaoPlanilha(dados, qtd) {
+    var meses = (dados.lancamentos || []).map(function (l) { return l.mes; }).sort();
+    var jaTem = FC.store.get().lancamentos.filter(function (l) { return l.origem === 'planilha'; }).length;
+    ui.modal({
+      titulo: 'Trazer a planilha',
+      sub: qtd + ' lançamentos, de ' + fmt.monthLabel(meses[0], true) + ' a ' + fmt.monthLabel(meses[meses.length - 1], true),
+      largura: 'slim',
+      corpo: h('div.col', { style: { gap: 'var(--sp-3)' } },
+        h('div.note.note--ok', ic('check'), h('div',
+          h('strong.note__title', '"Atualizar com a planilha" (recomendado)'),
+          'Os lançamentos da planilha entram no painel de vocês' +
+          (jaTem ? ', trocando os ' + jaTem + ' que vieram dela antes' : '') + '. ' +
+          'Pessoas, cartões e categorias são casados pelo nome. O que foi lançado no app, as assinaturas, ' +
+          'os investimentos e os ajustes ficam como estão.')),
+        FC.nuvem && FC.nuvem.ligado()
+          ? h('div.note', ic('sync'), h('div', 'Depois de importar, o outro celular recebe tudo pela sincronização.'))
+          : null
+      ),
+      acoes: function (c) {
+        return [
+          h('button.btn.btn--danger-ghost.btn--sm', {
+            type: 'button',
+            onclick: function () {
+              c.fechar();
+              ui.confirmar({
+                titulo: 'Substituir tudo',
+                texto: 'Apaga o painel atual (inclusive o que foi lançado no app e os ajustes) e fica só com o arquivo.',
+                ok: 'Substituir', perigo: true
+              }).then(function (sim) {
+                if (!sim) return;
+                FC.store.importar(dados, 'substituir');
+                ui.toast('Dados substituídos.', 'ok');
+              });
+            }
+          }, 'Substituir tudo'),
+          h('div.grow'),
+          h('button.btn', {
+            type: 'button',
+            onclick: function () {
+              try {
+                var r = FC.store.importar(dados, 'planilha');
+                c.fechar();
+                ui.toast(r.lancamentos + ' lançamentos da planilha no painel.', 'ok', 5000);
+                if (r.doAppNosMeses) {
+                  ui.toast(r.doAppNosMeses + ' lançamentos feitos no app caem em meses da planilha. ' +
+                           'Confira se algum não ficou repetido.', 'info', 9000);
+                }
+                FC.app.redesenhar();
+              } catch (e) { ui.toast(e.message, 'err'); }
+            }
+          }, ic('check'), 'Atualizar com a planilha')
         ];
       }
     });

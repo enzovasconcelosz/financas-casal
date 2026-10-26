@@ -289,3 +289,22 @@ novos em vez do cache.
 - Os indicadores dependem de APIs públicas gratuitas. Se saírem do ar ou mudarem
   de formato, o app mantém os últimos valores e mostra a data — não inventa
   número.
+
+---
+
+## Trazer a planilha antiga
+
+A planilha `Gastos.xlsx` (uma aba por mês) vira um arquivo que o app importa:
+
+```bash
+node ferramentas/planilha-para-json.js "C:\caminho\Gastos.xlsx"
+```
+
+A ferramenta entende os três formatos que a planilha teve desde 2023, confere
+cada painel contra a linha SOMA da própria planilha e **não gera nada** se algum
+total não bater. Meses depois do mês atual são projeção e ficam de fora.
+
+No app: *Ajustes › Seus dados › Importar JSON* › **Atualizar com a planilha**.
+Pessoas, cartões e categorias são casados pelo nome; os lançamentos que vieram
+da planilha antes são trocados pelos novos, e o que foi lançado no app fica.
+Pode rodar de novo sempre que a planilha mudar — não duplica.
