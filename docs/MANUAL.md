@@ -174,9 +174,10 @@ fatura já está comprometido com parcelas e assinaturas, por pessoa e por cart�
 - **sugere assinaturas** — gastos com o mesmo nome e valor estável em 3 dos
   últimos 4 meses (Spotify, seguro, plano de celular).
 
-O patrimônio desconta separadamente a *fatura em aberto* (até o mês atual) e as
-*parcelas a vencer* (já lançadas para os meses seguintes). Assinaturas futuras não
-entram no patrimônio: ainda não são dívida.
+O patrimônio desconta só a *fatura em aberto* (até o mês atual). As *parcelas a
+vencer* (já lançadas para os meses seguintes) aparecem no painel apenas como
+informação: o cartão só cobra quando a fatura fecha, então elas entram no
+patrimônio no mês da fatura delas. Assinaturas futuras também não entram.
 
 **Investimentos** — cadastre cada aplicação e registre aporte, resgate e
 rendimento. O saldo sai dessas movimentações. Tem donut de alocação, evolução da

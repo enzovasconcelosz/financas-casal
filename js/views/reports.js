@@ -420,7 +420,7 @@
         { k: 'Patrimônio', v: fmt.brl(pat.total), sinal: pat.total >= 0 ? 'pos' : 'neg' },
         { k: 'Em conta', v: fmt.brl(pat.conta) },
         { k: 'Investido', v: fmt.brl(pat.investido) },
-        { k: 'Cartão a pagar', v: fmt.brl(pat.fatura + (pat.aVencer || 0)), sinal: pat.fatura > 0 ? 'neg' : null },
+        { k: 'Fatura em aberto', v: fmt.brl(pat.fatura), sinal: pat.fatura > 0 ? 'neg' : null },
         { k: 'Entradas do mês', v: fmt.brl(r.entradas), sinal: 'pos' },
         { k: 'Gastos do mês', v: fmt.brl(r.gastos) },
         { k: 'Sobra do mês', v: fmt.brl(r.sobra), sinal: r.sobra >= 0 ? 'pos' : 'neg' },

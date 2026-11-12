@@ -209,8 +209,9 @@
       { k: 'Investido', v: pat.investido, cor: 'var(--c1)', icone: 'trend' },
       { k: 'A receber', v: pat.aReceber, cor: 'var(--c4)', icone: 'handCoins' },
       { k: 'Fatura em aberto', v: -pat.fatura, cor: 'var(--c5)', icone: 'card' },
-      { k: 'Parcelas a vencer', v: -(pat.aVencer || 0), cor: 'var(--c3)', icone: 'calendar' }
     ];
+    /* informativo: nao entra na conta do patrimonio */
+    var aVencer = pat.aVencer || 0;
 
     return h('div.card',
       h('div.grid.grid--wide', { style: { gap: 'var(--sp-5)' } },
@@ -243,7 +244,16 @@
                   }
                 }, fmt.brl(x.v))
               );
-            })
+            }),
+            aVencer > 0 ? h('div.row', {
+              style: { borderTop: '1px dashed var(--line)', paddingTop: 'var(--sp-2)', marginTop: '2px' },
+              title: 'Parcelas lançadas para os próximos meses. Não entram no patrimônio: só são cobradas quando a fatura fecha.'
+            },
+              h('span', { style: { width: '9px', height: '9px', borderRadius: '99px', background: 'var(--c3)', flex: 'none', opacity: '.6' } }),
+              h('span.grow.dim', { style: { fontSize: 'var(--fs-sm)' } }, 'Parcelas a vencer ',
+                h('span', { style: { fontSize: 'var(--fs-xs)', opacity: '.75' } }, '· só informativo')),
+              h('span.num.dim', { style: { fontSize: 'var(--fs-sm)', fontWeight: '650' } }, fmt.brl(aVencer))
+            ) : null
           ),
 
           h('div.row.wrap', { style: { gap: 'var(--sp-2)' } },

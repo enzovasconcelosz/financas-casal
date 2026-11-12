@@ -285,7 +285,11 @@
     }).sort(function (a, b) { return b.aberto - a.aberto; });
   }
 
-  /** O numero global que o casal quer ver */
+  /**
+   * O numero global que o casal quer ver.
+   * Parcelas a vencer (meses seguintes) sao so informativas: o cartao so cobra
+   * quando a fatura fecha, entao so a fatura em aberto (ate o mes atual) desconta.
+   */
   function patrimonio(s) {
     var conta = saldoEmConta(s);
     var investido = totalInvestido(s);
@@ -298,7 +302,7 @@
       aReceber: receber,
       fatura: fatura,
       aVencer: aVencer,
-      total: round2(conta + investido + receber - fatura - aVencer)
+      total: round2(conta + investido + receber - fatura)
     };
   }
 
