@@ -24,8 +24,11 @@ site abre.
 
 1. **Ajustes › Saldo em conta** — diga quanto há hoje em cada conta e a partir
    de que data. É desse ponto que o app parte.
-2. **Ajustes › Cartões** — cadastre com o dia do fechamento, para a compra cair
-   na fatura certa.
+2. **Ajustes › Cartões** — cadastre com o dia do fechamento e do vencimento, para
+   a compra cair na fatura certa. A fatura de um mês sempre vence no mês seguinte:
+   num cartão que fecha dia 3 e vence dia 10, a fatura de novembro recebe as
+   compras de 4/nov a 3/dez e vence em 10/dez; num que fecha dia 25 e vence dia 5,
+   a de novembro fecha em 25/nov e vence em 5/dez.
 3. **Lance o primeiro gasto** — pelo botão *Lançar*, pela tecla `N`, ou digitando
    direto na última linha de cada painel, como na planilha.
 

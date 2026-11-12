@@ -394,8 +394,7 @@
       if (s.cartoes[i].pessoaId === pessoaId) { c = s.cartoes[i]; break; }
     }
     if (!c || !c.fechamento) return mes;
-    var dia = parseInt(String(dataISO).slice(8, 10), 10);
-    return dia > c.fechamento ? fmt.addMonths(mes, 1) : mes;
+    return FC.model.mesFaturaDaCompra(c, dataISO);
   }
 
   function abrirNoFormulario(r, item) {

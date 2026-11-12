@@ -250,15 +250,31 @@
   }
 
   /**
-   * Mes da fatura que ainda esta recebendo compras nesse cartao.
-   * A fatura do mes M fecha no dia do fechamento de M (compras nesse dia ainda entram);
-   * sem dia de fechamento conhecido, fecha no fim do mes.
+   * A fatura do mes M sempre vence no mes seguinte (M+1).
+   * Se o cartao fecha antes do dia do vencimento (fecha 3, vence 10), ela fecha
+   * tambem em M+1: a fatura de novembro fecha 3/dez e vence 10/dez.
+   * Se fecha depois (fecha 25, vence 5), ela fecha ainda em M: 25/nov, vence 5/dez.
    */
-  function mesFaturaAtual(c, hojeISO) {
-    var mes = hojeISO.slice(0, 7);
-    var dia = parseInt(hojeISO.slice(8, 10), 10);
+  function fechaNoMesSeguinte(c) {
+    return !!(c && c.fechamento && c.vencimento && c.fechamento < c.vencimento);
+  }
+
+  /**
+   * Mes da fatura em que cai uma compra feita em dataISO nesse cartao.
+   * Compras no proprio dia do fechamento ainda entram; sem dia de fechamento
+   * conhecido, a fatura fecha no fim do mes.
+   */
+  function mesFaturaDaCompra(c, dataISO) {
+    var mes = String(dataISO).slice(0, 7);
+    var dia = parseInt(String(dataISO).slice(8, 10), 10);
     var fecha = c && c.fechamento ? Math.min(c.fechamento, fmt.daysInMonth(mes)) : fmt.daysInMonth(mes);
-    return dia <= fecha ? mes : fmt.addMonths(mes, 1);
+    var mesDoFechamento = dia <= fecha ? mes : fmt.addMonths(mes, 1);
+    return fechaNoMesSeguinte(c) ? fmt.addMonths(mesDoFechamento, -1) : mesDoFechamento;
+  }
+
+  /** Mes da fatura que ainda esta recebendo compras nesse cartao */
+  function mesFaturaAtual(c, hojeISO) {
+    return mesFaturaDaCompra(c, hojeISO);
   }
 
   /**
@@ -852,7 +868,8 @@
     ehGastoProprio: ehGastoProprio, ehTerceiro: ehTerceiro, ehCredito: ehCredito, ehCaixa: ehCaixa,
     paineis: paineis, resumoPessoa: resumoPessoa, resumoCasal: resumoCasal,
     saldoEmConta: saldoEmConta, totalInvestido: totalInvestido,
-    faturaEmAberto: faturaEmAberto, faturasEmAberto: faturasEmAberto, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro,
+    faturaEmAberto: faturaEmAberto, faturasEmAberto: faturasEmAberto,
+    mesFaturaDaCompra: mesFaturaDaCompra, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro,
     patrimonio: patrimonio,
     serieMensal: serieMensal, seriePatrimonio: seriePatrimonio, serieInvestido: serieInvestido,
     porCategoria: porCategoria, maioresGastos: maioresGastos, porDia: porDia,

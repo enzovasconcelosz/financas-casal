@@ -311,17 +311,13 @@
       atualizarResumoParcela();
     }
 
-    /** Se a compra foi depois do fechamento, sugere a fatura do mes seguinte */
+    /** Sugere a fatura em que a compra cai, pelo fechamento e vencimento do cartao */
     function ajustarMesFatura() {
       if (dados.metodo !== 'credito' || editando) return;
       var c = selCartao.value ? FC.model.cartao(s, selCartao.value) : null;
-      var mesCompra = fmt.monthKey(inData.value);
-      if (c && c.fechamento) {
-        var dia = parseInt(String(inData.value).slice(8, 10), 10);
-        inMesFatura.value = dia > c.fechamento ? fmt.addMonths(mesCompra, 1) : mesCompra;
-      } else {
-        inMesFatura.value = mesCompra;
-      }
+      inMesFatura.value = c && c.fechamento
+        ? FC.model.mesFaturaDaCompra(c, inData.value)
+        : fmt.monthKey(inData.value);
       atualizarResumoParcela();
     }
     inData.addEventListener('change', ajustarMesFatura);
