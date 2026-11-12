@@ -126,7 +126,8 @@ O patrimônio do casal é:
 saldo em conta  +  investido  +  a receber  −  fatura em aberto
 ```
 
-E pode ficar negativo, se a fatura em aberto passar do resto.
+A *fatura em aberto* é só a fatura já fechada e ainda não marcada como paga. E o
+patrimônio pode ficar negativo, se ela passar do resto.
 
 ### Cartão emprestado
 
@@ -174,10 +175,11 @@ fatura já está comprometido com parcelas e assinaturas, por pessoa e por cart�
 - **sugere assinaturas** — gastos com o mesmo nome e valor estável em 3 dos
   últimos 4 meses (Spotify, seguro, plano de celular).
 
-O patrimônio desconta só a *fatura em aberto* (até o mês atual). As *parcelas a
-vencer* (já lançadas para os meses seguintes) aparecem no painel apenas como
-informação: o cartão só cobra quando a fatura fecha, então elas entram no
-patrimônio no mês da fatura delas. Assinaturas futuras também não entram.
+O patrimônio desconta só a *fatura em aberto*: fatura que já fechou (pelo dia de
+fechamento do cartão) ou atrasou e ainda não foi marcada como paga. A *fatura
+atual* (que ainda recebe compras) e as *parcelas a vencer* (das faturas
+seguintes) aparecem no painel apenas como informação: o cartão só cobra quando a
+fatura fecha. Assinaturas futuras também não entram.
 
 **Investimentos** — cadastre cada aplicação e registre aporte, resgate e
 rendimento. O saldo sai dessas movimentações. Tem donut de alocação, evolução da

@@ -237,27 +237,58 @@
     return round2(total);
   }
 
-  /** Fatura ainda em aberto: credito nao pago ate o mes atual */
-  function faturaEmAberto(s) {
-    var atual = fmt.thisMonth();
-    return fmt.sumBy(
-      s.lancamentos.filter(function (l) {
-        return l.tipo === 'gasto' && ehCredito(l) && !l.pago && l.mes <= atual;
-      }),
-      function (l) { return l.valor; }
-    );
+  /* ---------------------------- faturas do cartao ---------------------------- */
+
+  /** Cartao do lancamento; sem cartao, o primeiro cartao da pessoa com fechamento */
+  function cartaoDoLancamento(s, l) {
+    var c = l.cartaoId ? cartao(s, l.cartaoId) : null;
+    if (c && c.fechamento) return c;
+    for (var i = 0; i < s.cartoes.length; i++) {
+      if (s.cartoes[i].pessoaId === l.pessoaId && s.cartoes[i].fechamento) return s.cartoes[i];
+    }
+    return null;
   }
 
-  /** Parcelas no cartao que ja estao lancadas para os proximos meses (divida assumida) */
-  function parcelasAVencer(s) {
-    var atual = fmt.thisMonth();
-    return fmt.sumBy(
-      s.lancamentos.filter(function (l) {
-        return l.tipo === 'gasto' && ehCredito(l) && !l.pago && l.mes > atual;
-      }),
-      function (l) { return l.valor; }
-    );
+  /**
+   * Mes da fatura que ainda esta recebendo compras nesse cartao.
+   * A fatura do mes M fecha no dia do fechamento de M (compras nesse dia ainda entram);
+   * sem dia de fechamento conhecido, fecha no fim do mes.
+   */
+  function mesFaturaAtual(c, hojeISO) {
+    var mes = hojeISO.slice(0, 7);
+    var dia = parseInt(hojeISO.slice(8, 10), 10);
+    var fecha = c && c.fechamento ? Math.min(c.fechamento, fmt.daysInMonth(mes)) : fmt.daysInMonth(mes);
+    return dia <= fecha ? mes : fmt.addMonths(mes, 1);
   }
+
+  /**
+   * Separa o credito ainda nao pago:
+   *   fechada  — fatura ja fechada (ou atrasada) e nao marcada como paga: divida de verdade
+   *   atual    — fatura que ainda esta recebendo compras (informativo)
+   *   aVencer  — parcelas lancadas para as faturas seguintes (informativo)
+   */
+  function faturasEmAberto(s, hojeISO) {
+    var hoje = hojeISO || fmt.todayISO();
+    var r = { fechada: 0, atual: 0, aVencer: 0 };
+    s.lancamentos.forEach(function (l) {
+      if (l.tipo !== 'gasto' || !ehCredito(l) || l.pago) return;
+      var atual = mesFaturaAtual(cartaoDoLancamento(s, l), hoje);
+      var v = Number(l.valor) || 0;
+      if (l.mes < atual) r.fechada += v;
+      else if (l.mes === atual) r.atual += v;
+      else r.aVencer += v;
+    });
+    r.fechada = round2(r.fechada);
+    r.atual = round2(r.atual);
+    r.aVencer = round2(r.aVencer);
+    return r;
+  }
+
+  /** Fatura em aberto: ja fechada (ou atrasada) e nao marcada como paga */
+  function faturaEmAberto(s) { return faturasEmAberto(s).fechada; }
+
+  /** Parcelas no cartao ja lancadas para as faturas seguintes a atual */
+  function parcelasAVencer(s) { return faturasEmAberto(s).aVencer; }
 
   /** Quanto terceiros ainda devem */
   function aReceberTotal(s) {
@@ -287,20 +318,23 @@
 
   /**
    * O numero global que o casal quer ver.
-   * Parcelas a vencer (meses seguintes) sao so informativas: o cartao so cobra
-   * quando a fatura fecha, entao so a fatura em aberto (ate o mes atual) desconta.
+   * So desconta a fatura ja fechada e nao paga. A fatura atual (ainda recebendo
+   * compras) e as parcelas das seguintes sao so informativas: o cartao so cobra
+   * quando a fatura fecha.
    */
   function patrimonio(s) {
     var conta = saldoEmConta(s);
     var investido = totalInvestido(s);
     var receber = aReceberTotal(s);
-    var fatura = faturaEmAberto(s);
-    var aVencer = parcelasAVencer(s);
+    var fat = faturasEmAberto(s);
+    var fatura = fat.fechada;
+    var aVencer = fat.aVencer;
     return {
       conta: conta,
       investido: investido,
       aReceber: receber,
       fatura: fatura,
+      faturaAtual: fat.atual,
       aVencer: aVencer,
       total: round2(conta + investido + receber - fatura)
     };
@@ -818,7 +852,7 @@
     ehGastoProprio: ehGastoProprio, ehTerceiro: ehTerceiro, ehCredito: ehCredito, ehCaixa: ehCaixa,
     paineis: paineis, resumoPessoa: resumoPessoa, resumoCasal: resumoCasal,
     saldoEmConta: saldoEmConta, totalInvestido: totalInvestido,
-    faturaEmAberto: faturaEmAberto, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro,
+    faturaEmAberto: faturaEmAberto, faturasEmAberto: faturasEmAberto, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro,
     patrimonio: patrimonio,
     serieMensal: serieMensal, seriePatrimonio: seriePatrimonio, serieInvestido: serieInvestido,
     porCategoria: porCategoria, maioresGastos: maioresGastos, porDia: porDia,
