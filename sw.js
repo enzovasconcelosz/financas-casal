@@ -7,7 +7,7 @@
      - nada de API externa entra no cache
    ========================================================================== */
 
-var VERSAO = 'financas-casal-v5';
+var VERSAO = 'financas-casal-v6';
 
 var ARQUIVOS = [
   './',
@@ -51,7 +51,8 @@ var ARQUIVOS = [
 self.addEventListener('install', function (e) {
   e.waitUntil(
     caches.open(VERSAO).then(function (cache) {
-      return cache.addAll(ARQUIVOS);
+      /* 'reload' ignora o cache HTTP do navegador: a versão nova nunca guarda arquivo velho */
+      return cache.addAll(ARQUIVOS.map(function (u) { return new Request(u, { cache: 'reload' }); }));
     }).then(function () { return self.skipWaiting(); })
   );
 });

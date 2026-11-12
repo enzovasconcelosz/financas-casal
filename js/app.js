@@ -579,6 +579,16 @@
   function registrarServiceWorker() {
     if (!('serviceWorker' in navigator)) return;
     if (location.protocol === 'file:') return;
+    /* versão nova publicada: recarrega uma vez para já rodar o código novo
+       (só quando havia uma versão anterior controlando a página) */
+    var tinhaVersao = !!navigator.serviceWorker.controller;
+    var recarregou = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!tinhaVersao || recarregou) return;
+      recarregou = true;
+      if (FC.store.conectado()) { FC.store.salvarAgora(); FC.store.renovarSessao(); }
+      location.reload();
+    });
     navigator.serviceWorker.register('sw.js').catch(function () { /* segue sem offline */ });
   }
 
