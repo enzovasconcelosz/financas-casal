@@ -492,12 +492,13 @@
     });
 
     /* salva antes de fechar */
+    /* e conta o prazo do login lembrado a partir de quando o site sai da tela */
     root.addEventListener('beforeunload', function () {
-      if (FC.store.conectado()) FC.store.salvarAgora();
+      if (FC.store.conectado()) { FC.store.salvarAgora(); FC.store.renovarSessao(); }
     });
 
     document.addEventListener('visibilitychange', function () {
-      if (document.hidden && FC.store.conectado()) FC.store.salvarAgora();
+      if (document.hidden && FC.store.conectado()) { FC.store.salvarAgora(); FC.store.renovarSessao(); }
     });
   }
 

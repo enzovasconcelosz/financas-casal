@@ -7,7 +7,7 @@
      - nada de API externa entra no cache
    ========================================================================== */
 
-var VERSAO = 'financas-casal-v4';
+var VERSAO = 'financas-casal-v5';
 
 var ARQUIVOS = [
   './',

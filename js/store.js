@@ -5,6 +5,8 @@
      fc:contas        lista de acessos (email + hash da senha)
      fc:cofre:<id>    dados de cada acesso (texto ou pacote criptografado)
      fc:ultima        ultimo acesso usado (so para pre-preencher o email)
+     fc:sessao        login lembrado: {id, ate} — vale ate SESSAO_MIN minutos
+                      depois que o site e fechado
    ========================================================================== */
 (function (root) {
   'use strict';
@@ -15,6 +17,10 @@
   var K_COFRE = 'fc:cofre:';
   var K_ULTIMA = 'fc:ultima';
   var K_SESSAO = 'fc:sessao';
+  var K_CHAVE_NUVEM = 'fc:nuvem:chave:';  // chave da nuvem guardada junto com o login
+
+  /** Por quantos minutos o login continua valendo depois de fechar o site */
+  var SESSAO_MIN = 15;
 
   var estado = null;      // cofre aberto
   var contaAtual = null;  // {id, email, nome}
@@ -22,6 +28,7 @@
   var ouvintes = [];
   var timerSalvar = null;
   var pilhaDesfazer = [];
+  var timerSessao = null;
 
   /* ---------------------------- localStorage seguro ---------------------------- */
 
@@ -115,7 +122,7 @@
       contaAtual = { id: conta.id, email: conta.email, nome: conta.nome };
       estado = cofre;
       senhaMem = dados.senha;
-      ssSet(K_SESSAO, conta.id);
+      gravarSessao(conta.id);
       notificar();
       return contaAtual;
     });
@@ -163,27 +170,59 @@
     contaAtual = { id: conta.id, email: conta.email, nome: conta.nome };
     senhaMem = senha;
     lsSet(K_ULTIMA, conta.email);
-    ssSet(K_SESSAO, conta.id);
+    gravarSessao(conta.id);
     notificar();
   }
 
-  /** Reabre a sessao da aba (evita pedir senha a cada F5) — so se nao criptografado */
+  /* ---------------------------- login lembrado ---------------------------- */
+
+  function gravarSessao(id) {
+    lsSet(K_SESSAO, JSON.stringify({ id: id, ate: Date.now() + SESSAO_MIN * 60000 }));
+    if (!timerSessao && root.setInterval) timerSessao = root.setInterval(renovarSessao, 60000);
+  }
+
+  /** Empurra o prazo do login para frente (chamado com o site aberto e ao fechar) */
+  function renovarSessao() {
+    if (contaAtual) gravarSessao(contaAtual.id);
+  }
+
+  function lerSessao() {
+    var s = null;
+    try { s = JSON.parse(lsGet(K_SESSAO) || 'null'); } catch (e) {}
+    if (s && s.id && s.ate > Date.now()) return s.id;
+    return ssGet(K_SESSAO);  // aba aberta antes desta versao (login guardado so na aba)
+  }
+
+  /** Esquece o login lembrado e a chave da nuvem guardada com ele */
+  function esquecerSessao() {
+    lsDel(K_SESSAO);
+    ssDel(K_SESSAO);
+    try {
+      Object.keys(root.localStorage).forEach(function (k) {
+        if (k.indexOf(K_CHAVE_NUVEM) === 0) root.localStorage.removeItem(k);
+      });
+    } catch (e) {}
+    if (timerSessao) { root.clearInterval(timerSessao); timerSessao = null; }
+  }
+
+  /** Reabre o login lembrado (F5 ou site reaberto dentro do prazo) — so se nao criptografado */
   function retomarSessao() {
-    var id = ssGet(K_SESSAO);
-    if (!id) return false;
+    var id = lerSessao();
+    if (!id) { esquecerSessao(); return false; }
     var lista = listarContas();
     var conta = null;
     for (var i = 0; i < lista.length; i++) if (lista[i].id === id) conta = lista[i];
-    if (!conta) return false;
+    if (!conta) { esquecerSessao(); return false; }
 
     var bruto = lsGet(K_COFRE + conta.id);
-    if (!bruto) return false;
+    if (!bruto) { esquecerSessao(); return false; }
     var dados;
-    try { dados = JSON.parse(bruto); } catch (e) { return false; }
-    if (dados && dados.enc === 1) return false; // precisa da senha
+    try { dados = JSON.parse(bruto); } catch (e) { esquecerSessao(); return false; }
+    if (dados && dados.enc === 1) { esquecerSessao(); return false; } // precisa da senha
 
     estado = migrar(dados);
     contaAtual = { id: conta.id, email: conta.email, nome: conta.nome };
+    gravarSessao(conta.id);
     return true;
   }
 
@@ -192,7 +231,7 @@
     estado = null;
     contaAtual = null;
     senhaMem = null;
-    ssDel(K_SESSAO);
+    esquecerSessao();
     notificar();
   }
 
@@ -371,7 +410,7 @@
       senhaMem = senha;
       lsSet(K_COFRE + conta.id, serializar());
       lsSet(K_ULTIMA, email);
-      ssSet(K_SESSAO, conta.id);
+      gravarSessao(conta.id);
       notificar();
       return contaAtual;
     });
@@ -589,7 +628,7 @@
   FC.store = {
     disponivel: disponivel,
     listarContas: listarContas, acharConta: acharConta, ultimoEmail: ultimoEmail,
-    criarConta: criarConta, entrar: entrar, sair: sair, retomarSessao: retomarSessao,
+    criarConta: criarConta, entrar: entrar, sair: sair, retomarSessao: retomarSessao, renovarSessao: renovarSessao,
     trocarSenha: trocarSenha, apagarConta: apagarConta,
     get: get, conta: conta, conectado: conectado,
     subscrever: subscrever, notificar: notificar, atualizar: atualizar,

@@ -24,7 +24,7 @@
 
   var K_CFG = 'fc:nuvem:config';       // configuração digitada no aparelho (opcional)
   var K_LIG = 'fc:nuvem:ligacao:';     // + id da conta -> { uid, email, refreshToken }
-  var K_CHAVE = 'fc:nuvem:chave:';     // + id da conta -> chave da sessão (sessionStorage)
+  var K_CHAVE = 'fc:nuvem:chave:';     // + id da conta -> chave da sessão (localStorage, apagada junto com o login lembrado)
   var K_DISP = 'fc:dispositivo';
   var ITER = 150000;
   var POLL_MS = 20000;
@@ -270,14 +270,14 @@
     if (!id || !chave) return Promise.resolve();
     return subtle.exportKey('raw', chave).then(function (raw) {
       try {
-        sessionStorage.setItem(K_CHAVE + id, JSON.stringify({ k: cripto.toB64(new Uint8Array(raw)), salt: saltDados }));
+        localStorage.setItem(K_CHAVE + id, JSON.stringify({ k: cripto.toB64(new Uint8Array(raw)), salt: saltDados }));
       } catch (e) {}
     });
   }
   function recuperarChaveDaSessao() {
     var id = chaveConta();
     var s = null;
-    try { s = JSON.parse(sessionStorage.getItem(K_CHAVE + id) || 'null'); } catch (e) {}
+    try { s = JSON.parse(localStorage.getItem(K_CHAVE + id) || sessionStorage.getItem(K_CHAVE + id) || 'null'); } catch (e) {}
     if (!s) return Promise.resolve(false);
     return subtle.importKey('raw', cripto.fromB64(s.k), { name: 'AES-GCM' }, true, ['encrypt', 'decrypt'])
       .then(function (k) { chave = k; saltDados = s.salt; return true; });
@@ -440,7 +440,9 @@
     /* ao bloquear a conta já saiu: apaga qualquer chave guardada na sessão */
     if (esquecerChave) {
       try {
-        Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf(K_CHAVE) === 0) sessionStorage.removeItem(k); });
+        [localStorage, sessionStorage].forEach(function (area) {
+          Object.keys(area).forEach(function (k) { if (k.indexOf(K_CHAVE) === 0) area.removeItem(k); });
+        });
       } catch (e) {}
     }
     chave = null; saltDados = null;
