@@ -155,6 +155,15 @@ A cor tinge os painéis e os gráficos daquela aba.
 **Mês a mês** — setas na barra de cima, ou clique no nome do mês para o
 calendário. `←` e `→` também andam. Um ponto marca os meses que já têm dados.
 
+**Gastos do mês** — no fim da aba *Casal*, todos os gastos do mês, separados por
+dia com o total de cada dia. Filtre pela forma de pagamento (cartão, débito, Pix,
+dinheiro), por cartão (Itaú, Nubank…), por quem gastou, por categoria ou pelo
+texto da busca; cada botão de filtro já mostra quanto soma. Ordene por mais
+recentes, mais antigos, maior ou menor valor. Toque num dia em *Dias do mês* para
+ver só aquele dia, ou na categoria de uma linha para ver só aquela categoria. O
+resumo mostra total, quantidade, média, o maior gasto e quanto o filtro representa
+do mês. Os filtros continuam ao trocar de mês.
+
 **Parcelas** — no lançamento, escolha *Parcelado*: o app cria as parcelas nos
 meses seguintes. Dá para informar o **total da compra** (a última parcela fecha o
 centavo) ou o **valor de cada parcela**, e **começar de uma parcela no meio**

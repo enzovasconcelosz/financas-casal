@@ -549,7 +549,9 @@
   /* ======================================================================
      MAPA DE CALOR DO MES
      ====================================================================== */
-  function mapaCalor(dias, mes, corBase) {
+  /** op.aoClicar(dia, celula): torna os dias clicaveis; op.selecionado: dia marcado */
+  function mapaCalor(dias, mes, corBase, op) {
+    op = op || {};
     var max = Math.max.apply(null, dias.map(function (d2) { return d2.total; }).concat([1]));
     var inicio = fmt.firstWeekday(mes);
     var hoje = fmt.todayISO();
@@ -561,12 +563,17 @@
     dias.forEach(function (dd) {
       var intens = dd.total > 0 ? 0.16 + (dd.total / max) * 0.84 : 0;
       var iso = mes + '-' + fmt.pad(dd.dia);
-      var cel = h('div.heat__d' + (iso === hoje ? '.is-today' : ''), {
+      var cel = h((op.aoClicar ? 'button' : 'div') + '.heat__d' + (iso === hoje ? '.is-today' : '') +
+                  (op.selecionado === dd.dia ? '.is-sel' : ''), {
+        type: op.aoClicar ? 'button' : null,
+        'data-dia': String(dd.dia),
         style: intens > 0
           ? { background: 'color-mix(in srgb, ' + corBase + ' ' + Math.round(intens * 100) + '%, var(--surface-3))',
               color: intens > 0.55 ? '#06130f' : 'var(--text-2)' }
           : null,
-        title: fmt.dateBR(iso) + ' · ' + fmt.brl(dd.total) + (dd.qtd ? ' (' + dd.qtd + ')' : '')
+        title: fmt.dateBR(iso) + ' · ' + fmt.brl(dd.total) + (dd.qtd ? ' (' + dd.qtd + ')' : '') +
+               (op.aoClicar ? ' · clique para ver os gastos do dia' : ''),
+        onclick: op.aoClicar ? function (e) { op.aoClicar(dd.dia, e.currentTarget); } : null
       }, String(dd.dia));
       cells.push(cel);
     });

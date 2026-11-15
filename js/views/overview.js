@@ -141,56 +141,329 @@
     }), { tudo: true });
     var dias = FC.model.porDia(s, mes);
 
+    /* o dia escolhido no calendario vale so para o mes em que foi escolhido */
+    if (filtroGastos.mes !== mes) { filtroGastos.mes = mes; filtroGastos.dia = null; filtroGastos.limite = POR_PAGINA; }
+    var gastos = cardGastos(s, mes);
+
     tela.appendChild(h('div.grid.grid--3.mt-4',
-      cardCalendario(s, mes, dias),
+      cardCalendario(s, mes, dias, gastos),
       cardTerceiros(s, terceiros),
       cardParcelas(s, futuras)
     ));
 
-    /* ---------------------------- maiores gastos ---------------------------- */
-    var maiores = FC.model.maioresGastos(s, mes, 8);
-    if (maiores.length) {
-      tela.appendChild(h('div.card.mt-4',
-        h('div.card__head',
-          h('div.card__title', 'Maiores gastos do mês'),
-          h('div.card__sub', fmt.monthLabel(mes, true))
-        ),
-        h('div.tablewrap',
-          h('table.tbl',
-            h('thead', h('tr',
-              h('th', 'Descrição'),
-              h('th', 'Quem'),
-              h('th', 'Categoria'),
-              h('th', 'Forma'),
-              h('th.num', 'Valor')
-            )),
-            h('tbody', maiores.map(function (l) {
-              var p = FC.model.pessoa(s, l.pessoaId);
-              return h('tr', {
-                onclick: function () { FC.forms.lancamento({ id: l.id }); },
-                style: { cursor: 'pointer' }
-              },
-                h('td', h('div.rowdesc',
-                  h('div.rowdesc__txt', l.desc),
-                  l.parcela ? h('span.chip', l.parcela.n + '/' + l.parcela.de) : null,
-                  l.terceiroId ? h('span.chip.chip--warn', FC.model.nomeTerceiro(s, l.terceiroId)) : null
-                )),
-                h('td', p ? h('span.chip.chip--dot', {
-                  style: { '--chip-color': ui.corDoAcento(p.acento) }
-                }, p.apelido || p.nome) : '—'),
-                h('td', h('span.chip.chip--dot', {
-                  style: { '--chip-color': FC.model.corCategoria(s, l.categoriaId) }
-                }, FC.model.nomeCategoria(s, l.categoriaId))),
-                h('td.dim', FC.model.nomeMetodo(l.metodo)),
-                h('td.num', { style: { fontWeight: '650' } }, fmt.brl(l.valor))
-              );
+    /* ---------------------------- todos os gastos do mes ---------------------------- */
+    tela.appendChild(gastos.el);
+
+    d.mount(raiz, tela);
+  }
+
+  /* ======================================================================
+     GASTOS DO MES — todos, com filtros e ordem
+     ====================================================================== */
+  var POR_PAGINA = 40;
+
+  /* fica entre um redesenho e outro (lançar, sincronizar, trocar de mês) */
+  var filtroGastos = {
+    mes: null, forma: 'todas', cartaoId: null, pessoaId: null, categoriaId: null,
+    terceiros: true, dia: null, busca: '', ordem: 'recentes', limite: POR_PAGINA
+  };
+
+  var FORMAS = [
+    { id: 'todas', nome: 'Tudo', icone: 'list' },
+    { id: 'credito', nome: 'Cartão', icone: 'card' },
+    { id: 'debito', nome: 'Débito', icone: 'bank' },
+    { id: 'pix', nome: 'Pix', icone: 'pix' },
+    { id: 'dinheiro', nome: 'Dinheiro', icone: 'cash' }
+  ];
+
+  var ORDENS = [
+    { id: 'recentes', nome: 'Mais recentes' },
+    { id: 'antigos', nome: 'Mais antigos' },
+    { id: 'maior', nome: 'Maior valor' },
+    { id: 'menor', nome: 'Menor valor' },
+    { id: 'az', nome: 'Descrição (A–Z)' }
+  ];
+
+  function cardGastos(s, mes) {
+    var f = filtroGastos;
+    var pessoas = s.casal.pessoas;
+    var corpo = h('div');
+    var sub = h('div.card__sub');
+    var aoMudarDia = null;   // o calendario avisa quando o dia muda por aqui
+
+    function mudar(campo, valor) {
+      f[campo] = valor;
+      f.limite = POR_PAGINA;
+      pintar();
+    }
+
+    var inBusca = h('input.input', {
+      type: 'search', value: f.busca, placeholder: 'Buscar descrição, categoria, observação…',
+      'aria-label': 'Buscar nos gastos do mês',
+      oninput: function () { mudar('busca', inBusca.value); }
+    });
+
+    var selQuem = h('select.select', {
+      'aria-label': 'Quem gastou',
+      onchange: function () { mudar('pessoaId', selQuem.value || null); }
+    },
+      h('option', { value: '', selected: !f.pessoaId }, 'Os dois'),
+      pessoas.map(function (p) { return h('option', { value: p.id, selected: f.pessoaId === p.id }, p.apelido || p.nome); })
+    );
+
+    var selCategoria = h('select.select', {
+      'aria-label': 'Categoria',
+      onchange: function () { mudar('categoriaId', selCategoria.value || null); }
+    },
+      h('option', { value: '', selected: !f.categoriaId }, 'Todas as categorias'),
+      s.categorias.map(function (c) { return h('option', { value: c.id, selected: f.categoriaId === c.id }, c.nome); }),
+      h('option', { value: 'sem', selected: f.categoriaId === 'sem' }, 'Sem categoria')
+    );
+
+    var selOrdem = h('select.select', {
+      'aria-label': 'Ordenar',
+      onchange: function () { mudar('ordem', selOrdem.value); }
+    }, ORDENS.map(function (o) { return h('option', { value: o.id, selected: f.ordem === o.id }, o.nome); }));
+
+    var swTerceiros = ui.interruptor('Incluir cartão emprestado', f.terceiros !== false,
+      function (v) { mudar('terceiros', v); });
+
+    function limparTudo() {
+      f.forma = 'todas'; f.cartaoId = null; f.pessoaId = null; f.categoriaId = null;
+      f.terceiros = true; f.dia = null; f.busca = ''; f.limite = POR_PAGINA;
+      inBusca.value = ''; selQuem.value = ''; selCategoria.value = '';
+      swTerceiros.querySelector('input').checked = true;
+      if (aoMudarDia) aoMudarDia(null);
+      pintar();
+    }
+
+    /* botao de filtro com o total ao lado (zero fica apagado) */
+    function botao(ativo, rotulo, valor, icone, aoClicar, cor) {
+      return h('button.fchip', {
+        type: 'button', 'aria-pressed': String(!!ativo),
+        class: valor === 0 && !ativo ? 'is-zero' : '',
+        style: cor ? { '--fchip-dot': cor } : null,
+        onclick: aoClicar
+      },
+        icone ? ic(icone) : (cor ? h('span.fchip__dot') : null),
+        h('span', rotulo),
+        valor != null ? h('span.fchip__v', fmt.brl(valor)) : null
+      );
+    }
+
+    function pintar() {
+      var r = FC.model.gastosDoMes(s, mes, f);
+      var pf = r.porForma;
+      var totalFormas = Math.round((pf.credito + pf.debito + pf.pix + pf.dinheiro) * 100) / 100;
+
+      sub.textContent = fmt.monthLabel(mes, true) + ' · ' + r.qtdMes + (r.qtdMes === 1 ? ' gasto' : ' gastos');
+
+      /* formas de pagamento */
+      var linhaFormas = h('div.fchips.fchips--scroll',
+        FORMAS.map(function (x) {
+          var v = x.id === 'todas' ? totalFormas : pf[x.id];
+          return botao(f.forma === x.id, x.nome, v, x.icone, function () {
+            f.forma = x.id;
+            if (x.id !== 'credito' && x.id !== 'todas') f.cartaoId = null;
+            f.limite = POR_PAGINA;
+            pintar();
+          });
+        })
+      );
+
+      /* qual cartao: aparece quando ha mais de um, ou quando o filtro e "Cartão" */
+      var cartoes = r.porCartao;
+      var linhaCartoes = (cartoes.length > 1 || (f.forma === 'credito' && cartoes.length)) &&
+        (f.forma === 'credito' || f.forma === 'todas')
+        ? h('div.fchips.fchips--sub.fchips--scroll',
+            h('span.fchips__lbl', ic('card'), 'Cartão'),
+            botao(!f.cartaoId, 'Todos', null, null, function () { mudar('cartaoId', null); }),
+            cartoes.map(function (c) {
+              var cad = FC.model.cartao(s, c.id);
+              return botao(f.cartaoId === c.id, c.nome, c.total, null, function () {
+                f.cartaoId = f.cartaoId === c.id ? null : c.id;
+                if (f.cartaoId && f.forma !== 'credito') f.forma = 'credito';
+                f.limite = POR_PAGINA;
+                pintar();
+              }, (cad && cad.cor) || 'var(--c3)');
             }))
-          )
-        )
+        : null;
+
+      /* filtros ligados, cada um com o seu X */
+      var ativos = [];
+      if (f.dia) ativos.push({ txt: 'Dia ' + fmt.dateBR(mes + '-' + fmt.pad(f.dia)).slice(0, 5), tirar: function () {
+        f.dia = null; if (aoMudarDia) aoMudarDia(null);
+      } });
+      if (f.busca) ativos.push({ txt: '“' + f.busca + '”', tirar: function () { f.busca = ''; inBusca.value = ''; } });
+      if (f.pessoaId) ativos.push({ txt: FC.model.nomePessoa(s, f.pessoaId), tirar: function () { f.pessoaId = null; selQuem.value = ''; } });
+      if (f.categoriaId) ativos.push({ txt: f.categoriaId === 'sem' ? 'Sem categoria' : FC.model.nomeCategoria(s, f.categoriaId),
+        tirar: function () { f.categoriaId = null; selCategoria.value = ''; } });
+      if (f.terceiros === false) ativos.push({ txt: 'Sem cartão emprestado', tirar: function () {
+        f.terceiros = true; swTerceiros.querySelector('input').checked = true;
+      } });
+      var filtrado = ativos.length || f.forma !== 'todas' || f.cartaoId;
+
+      var linhaAtivos = ativos.length || filtrado
+        ? h('div.fchips',
+            ativos.map(function (a) {
+              return h('button.chip.chip--tint.fchip-x', {
+                type: 'button', title: 'Tirar este filtro',
+                onclick: function () { a.tirar(); f.limite = POR_PAGINA; pintar(); }
+              }, a.txt, ic('x'));
+            }),
+            h('button.btn.btn--ghost.btn--sm', { type: 'button', onclick: limparTudo }, 'Limpar filtros'))
+        : null;
+
+      /* resumo do que esta na lista */
+      var resumo = h('div.gsum',
+        h('div.gsum__i', h('span.gsum__k', filtrado ? 'Total filtrado' : 'Total do mês'),
+          h('span.gsum__v', fmt.brl(r.total))),
+        h('div.gsum__i', h('span.gsum__k', 'Gastos'), h('span.gsum__v', String(r.qtd))),
+        h('div.gsum__i', h('span.gsum__k', 'Média por gasto'), h('span.gsum__v', fmt.brl(r.media))),
+        r.maior ? h('div.gsum__i', h('span.gsum__k', 'Maior'),
+          h('span.gsum__v', { title: r.maior.desc }, fmt.brl(r.maior.valor))) : null,
+        filtrado && r.totalMes > 0 ? h('div.gsum__i', h('span.gsum__k', 'Do total do mês'),
+          h('span.gsum__v', fmt.pct((r.total / r.totalMes) * 100, 0))) : null
+      );
+
+      d.mount(corpo, h('div.col', { style: { gap: 'var(--sp-3)' } },
+        linhaFormas, linhaCartoes, linhaAtivos, resumo,
+        r.qtd ? tabela(r) : ui.vazio({
+          titulo: r.qtdMes ? 'Nenhum gasto com esses filtros' : 'Nenhum gasto em ' + fmt.monthLabel(mes, true),
+          icone: r.qtdMes ? 'filter' : 'inbox',
+          texto: r.qtdMes ? 'Tire algum filtro para ver mais.' : 'Assim que vocês lançarem, os gastos aparecem aqui.',
+          acao: r.qtdMes
+            ? h('button.btn.btn--ghost.btn--sm', { type: 'button', onclick: limparTudo }, 'Limpar filtros')
+            : h('button.btn.btn--sm', { type: 'button', onclick: function () { FC.forms.lancamento({ mes: mes }); } },
+                ic('plus'), 'Lançar')
+        })
       ));
     }
 
-    d.mount(raiz, tela);
+    function tabela(r) {
+      var porData = f.ordem === 'recentes' || f.ordem === 'antigos';
+      var visiveis = r.itens.slice(0, f.limite);
+      var linhas = [];
+
+      /* agrupando por dia, o cabecalho do dia mostra o total dele (com os filtros) */
+      var totalDia = {};
+      if (porData) r.itens.forEach(function (l) { totalDia[l.data] = (totalDia[l.data] || 0) + (Number(l.valor) || 0); });
+
+      var ultimoDia = null;
+      visiveis.forEach(function (l) {
+        if (porData && l.data !== ultimoDia) {
+          ultimoDia = l.data;
+          linhas.push(h('tr.tbl__group', h('td', { colspan: '6' }, h('div.row.row--between',
+            h('span', diaPorExtenso(l.data)),
+            h('span.num', fmt.brl(totalDia[l.data]))))));
+        }
+        linhas.push(linha(l, porData));
+      });
+
+      var faltam = r.itens.length - visiveis.length;
+      return h('div',
+        h('div.tablewrap',
+          h('table.tbl.tbl--gastos',
+            h('thead', h('tr',
+              h('th', porData ? '' : 'Data'),
+              h('th', 'Descrição'),
+              h('th.hide-sm', 'Quem'),
+              h('th.hide-sm', 'Categoria'),
+              h('th.hide-sm', 'Forma'),
+              h('th.num', 'Valor')
+            )),
+            h('tbody', linhas)
+          )
+        ),
+        faltam > 0 ? h('div.row.mt-2', { style: { justifyContent: 'center' } },
+          h('button.btn.btn--ghost.btn--sm', {
+            type: 'button', onclick: function () { f.limite += POR_PAGINA * 2; pintar(); }
+          }, 'Mostrar mais ' + Math.min(faltam, POR_PAGINA * 2) + ' de ' + faltam)) : null
+      );
+    }
+
+    function linha(l, porData) {
+      var p = FC.model.pessoa(s, l.pessoaId);
+      var cid = FC.model.cartaoIdDoGasto(s, l);
+      var cad = cid ? FC.model.cartao(s, cid) : null;
+      var forma = FC.model.nomeMetodo(l.metodo) + (cad ? ' · ' + cad.nome : '');
+      var nomeP = p ? (p.apelido || p.nome) : '—';
+
+      return h('tr' + (l.previsto ? '.is-previsto' : ''), {
+        onclick: function () {
+          if (l.previsto) FC.forms.assinatura({ id: l.recorrenteId });
+          else FC.forms.lancamento({ id: l.id });
+        },
+        style: { cursor: 'pointer' },
+        title: l.previsto ? 'Assinatura prevista: clique para editar a assinatura' : 'Clique para editar'
+      },
+        h('td.tight.dim', porData ? '' : fmt.dateBR(l.data).slice(0, 5)),
+        h('td.tbl__desc',
+          h('div.rowdesc',
+            h('div.rowdesc__txt', l.desc),
+            l.parcela ? h('span.chip', l.parcela.n + '/' + l.parcela.de) : null,
+            l.previsto ? h('span.chip.chip--info', 'prevista') : null,
+            l.recorrenteId && !l.previsto ? h('span.chip', { title: 'Assinatura' }, ic('refresh')) : null,
+            l.terceiroId ? h('span.chip.chip--warn', FC.model.nomeTerceiro(s, l.terceiroId)) : null
+          ),
+          /* no celular, quem/categoria/forma vão para a linha de baixo */
+          h('div.rowdesc__sub.only-sm', [nomeP, FC.model.nomeCategoria(s, l.categoriaId), forma].join(' · '))
+        ),
+        h('td.hide-sm', p ? h('span.chip.chip--dot', {
+          style: { '--chip-color': ui.corDoAcento(p.acento) }
+        }, nomeP) : '—'),
+        h('td.hide-sm', h('button.chip.chip--dot.chip--btn', {
+          type: 'button', title: 'Ver só esta categoria',
+          style: { '--chip-color': FC.model.corCategoria(s, l.categoriaId) },
+          onclick: function (e) {
+            e.stopPropagation();
+            f.categoriaId = l.categoriaId || 'sem';
+            selCategoria.value = f.categoriaId;
+            f.limite = POR_PAGINA;
+            pintar();
+          }
+        }, FC.model.nomeCategoria(s, l.categoriaId))),
+        h('td.hide-sm.dim', forma),
+        h('td.num', { style: { fontWeight: '650' } }, fmt.brl(l.valor))
+      );
+    }
+
+    pintar();
+
+    var el = h('div.card.mt-4', { id: 'gastos-do-mes' },
+      h('div.card__head',
+        h('div', h('div.card__title', 'Gastos do mês'), sub),
+        h('div.card__tools', h('div', { style: { width: '170px' } }, selOrdem))
+      ),
+      h('div.gbar',
+        h('div.gbar__busca', h('div.input-group', h('span.input-group__prefix', ic('search')), inBusca)),
+        selQuem,
+        selCategoria
+      ),
+      h('div.mt-2', swTerceiros),
+      h('div.mt-4', corpo)
+    );
+
+    return {
+      el: el,
+      /** chamado pelo calendario: escolhe (ou tira, com null) o dia */
+      definirDia: function (dia, aviso) {
+        aoMudarDia = aviso || aoMudarDia;
+        f.dia = dia;
+        f.limite = POR_PAGINA;
+        pintar();
+      },
+      ligarCalendario: function (aviso) { aoMudarDia = aviso; }
+    };
+  }
+
+  function diaPorExtenso(iso) {
+    var dt = fmt.dateOf(iso);
+    var semana = fmt.DIAS_ABR[dt.getDay()] || '';
+    var hoje = fmt.todayISO();
+    var ontem = fmt.isoOf(new Date(Date.now() - 864e5));
+    var rot = iso === hoje ? 'Hoje' : (iso === ontem ? 'Ontem' : semana);
+    return rot + ', ' + fmt.dateBR(iso).slice(0, 5);
   }
 
   /* ======================================================================
@@ -418,18 +691,43 @@
   /* ======================================================================
      CARTOES MENORES
      ====================================================================== */
-  function cardCalendario(s, mes, dias) {
+  function cardCalendario(s, mes, dias, gastos) {
     var total = fmt.sumBy(dias, function (x) { return x.total; });
     var comGasto = dias.filter(function (x) { return x.total > 0; }).length;
+    var mapa = null;
+
+    /* marca o dia escolhido (null tira a marca) */
+    function marcar(dia) {
+      if (!mapa) return;
+      Array.prototype.forEach.call(mapa.querySelectorAll('.heat__d'), function (c) {
+        c.classList.toggle('is-sel', dia != null && c.getAttribute('data-dia') === String(dia));
+      });
+    }
+
+    if (total > 0) {
+      mapa = ch.mapaCalor(dias, mes, 'var(--accent)', {
+        selecionado: filtroGastos.dia,
+        aoClicar: function (dia) {
+          var novo = filtroGastos.dia === dia ? null : dia;
+          marcar(novo);
+          gastos.definirDia(novo);
+          if (novo) {
+            var alvo = document.getElementById('gastos-do-mes');
+            if (alvo) alvo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+      gastos.ligarCalendario(marcar);
+    }
 
     return h('div.card',
       h('div.card__head',
-        h('div.card__title', 'Dias do mês'),
-        h('div.card__sub', comGasto + ' dias com gasto')
+        h('div', h('div.card__title', 'Dias do mês'),
+          h('div.card__sub', comGasto + ' dias com gasto' + (total > 0 ? ' · toque num dia para ver os gastos' : '')))
       ),
       total > 0
         ? h('div',
-            ch.mapaCalor(dias, mes, 'var(--accent)'),
+            mapa,
             h('div.heatscale.mt-2',
               h('span', 'menos'),
               h('span.heatscale__b', { style: { background: 'var(--surface-3)' } }),

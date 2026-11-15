@@ -659,3 +659,66 @@ tr:hover .rowacts, tr:focus-within .rowacts { opacity: 1; }
 .nuvem-ind[data-estado="erro"] .nuvem-ind__dot,
 .nuvem-ind[data-estado="reentrar"] .nuvem-ind__dot { background: var(--neg); }
 @keyframes pulsar { 50% { opacity: .3; } }
+
+/* ---------------------------- GASTOS DO MES (filtros) ---------------------------- */
+.gbar { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-2); }
+.gbar__busca .input { padding-left: 36px; }
+.gbar__busca .input-group__prefix svg { width: 16px; height: 16px; }
+@media (max-width: 760px) {
+  .gbar { grid-template-columns: 1fr 1fr; }
+  .gbar__busca { grid-column: 1 / -1; }
+  /* no celular os botões de filtro ficam numa linha que rola de lado */
+  .fchips.fchips--scroll { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .fchips--scroll::-webkit-scrollbar { display: none; }
+  .fchips--scroll > * { flex: none; }
+}
+
+.fchips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
+.fchips--sub { padding-left: var(--sp-2); border-left: 2px solid var(--line); }
+.fchips__lbl { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-xs); color: var(--text-3); font-weight: 620; }
+.fchips__lbl svg { width: 14px; height: 14px; }
+.fchip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 var(--sp-3);
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-full);
+  font-size: var(--fs-sm); font-weight: 600; color: var(--text-2);
+  white-space: nowrap; cursor: pointer;
+  transition: background var(--t-fast) var(--ease), color var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease);
+}
+.fchip svg { width: 15px; height: 15px; }
+.fchip:hover { color: var(--text); border-color: var(--line-hi); }
+.fchip[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.fchip.is-zero { opacity: .5; }
+.fchip__v { font-variant-numeric: tabular-nums; color: var(--text-3); font-weight: 650; }
+.fchip[aria-pressed="true"] .fchip__v { color: var(--accent); }
+.fchip__dot { width: 9px; height: 9px; border-radius: 99px; background: var(--fchip-dot, var(--c3)); flex: none; }
+.fchip-x { cursor: pointer; border: 0; gap: 5px; }
+.fchip-x svg { width: 12px; height: 12px; }
+
+.gsum {
+  display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface-2); border-radius: var(--r-md);
+}
+.gsum__i { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gsum__k { font-size: var(--fs-xs); color: var(--text-3); }
+.gsum__v { font-size: var(--fs-md); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.tbl tr.tbl__group td {
+  padding-top: var(--sp-3); padding-bottom: 6px;
+  font-size: var(--fs-xs); font-weight: 650; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .03em;
+  background: transparent;
+}
+.tbl tbody tr.tbl__group:hover { background: transparent; }
+.tbl--gastos td.tbl__desc { max-width: 0; width: 50%; }
+.tbl tr.is-previsto td { opacity: .7; }
+.chip--btn { border: 0; cursor: pointer; font-family: inherit; }
+.chip--btn:hover { filter: brightness(1.15); }
+.only-sm { display: none; }
+@media (max-width: 620px) {
+  .tbl--gastos .hide-sm { display: none; }
+  .tbl--gastos .only-sm { display: block; margin-top: 2px; }
+  .tbl--gastos td.tbl__desc { width: auto; }
+}

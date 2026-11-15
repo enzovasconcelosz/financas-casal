@@ -441,6 +441,106 @@
       .slice(0, n || 6);
   }
 
+  /** Forma de pagamento de um gasto, para os filtros: credito, debito, pix ou dinheiro */
+  function formaDoGasto(l) {
+    if (ehCredito(l)) return 'credito';
+    if (l.metodo === 'pix' || l.metodo === 'dinheiro') return l.metodo;
+    return 'debito';
+  }
+
+  /** Cartao de um gasto no credito (o do lancamento ou o da pessoa); null fora do credito */
+  function cartaoIdDoGasto(s, l) {
+    if (!ehCredito(l)) return null;
+    if (l.cartaoId) return l.cartaoId;
+    var c = cartaoDoLancamento(s, l);
+    return c ? c.id : null;
+  }
+
+  function diaDoGasto(l) {
+    return parseInt(String(l.data || '').slice(8, 10), 10) || 1;
+  }
+
+  /**
+   * Todos os gastos de um mes, filtrados e ordenados (painel "Gastos do mes").
+   * f (tudo opcional):
+   *   forma       'todas' | 'credito' | 'debito' | 'pix' | 'dinheiro'
+   *   cartaoId    so esse cartao (vale com forma credito ou todas)
+   *   pessoaId, categoriaId ('sem' = sem categoria), dia (1..31)
+   *   terceiros   false = sem os gastos de cartao emprestado
+   *   busca       texto: descricao, categoria, observacao, quem usou o cartao
+   *   ordem       'recentes' (padrao) | 'antigos' | 'maior' | 'menor' | 'az'
+   * Os meses futuros incluem as assinaturas previstas (previsto: true).
+   * porForma / porCartao: total de cada forma e de cada cartao com os demais filtros,
+   * para mostrar o valor nos proprios botoes do filtro.
+   */
+  function gastosDoMes(s, mes, f) {
+    f = f || {};
+    var busca = fmt.norm(f.busca || '');
+    var todos = doMes(s, mes).concat(previstos(s, mes)).filter(function (l) { return l.tipo === 'gasto'; });
+
+    /* filtros que nao sao forma/cartao */
+    var base = todos.filter(function (l) {
+      if (f.terceiros === false && l.terceiroId) return false;
+      if (f.pessoaId && l.pessoaId !== f.pessoaId) return false;
+      if (f.categoriaId === 'sem' ? !!l.categoriaId : (f.categoriaId && l.categoriaId !== f.categoriaId)) return false;
+      if (f.dia && diaDoGasto(l) !== f.dia) return false;
+      if (busca) {
+        var alvo = fmt.norm([l.desc, nomeCategoria(s, l.categoriaId), l.obs,
+          l.terceiroId ? nomeTerceiro(s, l.terceiroId) : ''].join(' '));
+        if (alvo.indexOf(busca) < 0) return false;
+      }
+      return true;
+    });
+
+    var porForma = { credito: 0, debito: 0, pix: 0, dinheiro: 0 };
+    var cartoes = {};
+    base.forEach(function (l) {
+      var v = Number(l.valor) || 0;
+      porForma[formaDoGasto(l)] += v;
+      var cid = cartaoIdDoGasto(s, l);
+      if (cid) {
+        var c = cartoes[cid] = cartoes[cid] || { id: cid, nome: (cartao(s, cid) || {}).nome || 'Cartão', total: 0, qtd: 0 };
+        c.total += v; c.qtd++;
+      }
+    });
+    Object.keys(porForma).forEach(function (k) { porForma[k] = round2(porForma[k]); });
+    var porCartao = Object.keys(cartoes).map(function (k) { cartoes[k].total = round2(cartoes[k].total); return cartoes[k]; })
+      .sort(function (a, b) { return b.total - a.total; });
+
+    var forma = f.forma && f.forma !== 'todas' ? f.forma : null;
+    var itens = base.filter(function (l) {
+      if (forma && formaDoGasto(l) !== forma) return false;
+      if (f.cartaoId && cartaoIdDoGasto(s, l) !== f.cartaoId) return false;
+      return true;
+    });
+
+    var porData = function (a, b) {
+      if (a.data !== b.data) return a.data < b.data ? -1 : 1;
+      return (a.criadoEm || '') < (b.criadoEm || '') ? -1 : ((a.criadoEm || '') > (b.criadoEm || '') ? 1 : 0);
+    };
+    var ordem = f.ordem || 'recentes';
+    itens.sort(function (a, b) {
+      if (ordem === 'antigos') return porData(a, b);
+      if (ordem === 'maior') return (b.valor - a.valor) || porData(b, a);
+      if (ordem === 'menor') return (a.valor - b.valor) || porData(b, a);
+      if (ordem === 'az') return String(a.desc).localeCompare(String(b.desc), 'pt-BR') || porData(b, a);
+      return porData(b, a);
+    });
+
+    var total = fmt.sumBy(itens, function (l) { return l.valor; });
+    return {
+      itens: itens,
+      total: total,
+      qtd: itens.length,
+      media: itens.length ? round2(total / itens.length) : 0,
+      maior: itens.reduce(function (m, l) { return !m || l.valor > m.valor ? l : m; }, null),
+      totalMes: fmt.sumBy(todos, function (l) { return l.valor; }),
+      qtdMes: todos.length,
+      porForma: porForma,
+      porCartao: porCartao
+    };
+  }
+
   /** Gasto por dia do mes (mapa de calor) */
   function porDia(s, mes) {
     var dias = fmt.daysInMonth(mes);
@@ -921,6 +1021,7 @@
     patrimonio: patrimonio,
     serieMensal: serieMensal, seriePatrimonio: seriePatrimonio, serieInvestido: serieInvestido,
     porCategoria: porCategoria, maioresGastos: maioresGastos, porDia: porDia,
+    gastosDoMes: gastosDoMes, formaDoGasto: formaDoGasto, cartaoIdDoGasto: cartaoIdDoGasto,
     saldoInvestimento: saldoInvestimento, carteira: carteira, movimentosDoMes: movimentosDoMes,
     gerarParcelas: gerarParcelas, irmaosDaParcela: irmaosDaParcela, parcelasFuturas: parcelasFuturas,
     dataMaisMeses: dataMaisMeses, parcelamentos: parcelamentos, parcelasIncompletas: parcelasIncompletas,
