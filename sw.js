@@ -7,7 +7,9 @@
      - nada de API externa entra no cache
    ========================================================================== */
 
-var VERSAO = 'financas-casal-v7';
+/* Mude a VERSAO a cada publicação que altere css/js: só assim o celular troca
+   os arquivos do cache já na primeira abertura (e a página recarrega sozinha). */
+var VERSAO = 'financas-casal-v8';
 
 var ARQUIVOS = [
   './',

@@ -159,13 +159,16 @@ calendário. `←` e `→` também andam. Um ponto marca os meses que já têm d
 meses seguintes. Dá para informar o **total da compra** (a última parcela fecha o
 centavo) ou o **valor de cada parcela**, e **começar de uma parcela no meio**
 ("estou na 3 de 10"). Vale para cartão e também para carnê, boleto e
-financiamento no débito/Pix. Ao editar uma parcela, dá para levar a mudança às
-parcelas seguintes.
+financiamento no débito/Pix. Ao editar uma parcela, a mudança de valor,
+descrição, categoria e cartão vai também para as parcelas seguintes que ainda não
+foram pagas; desligue *Alterar também as parcelas seguintes* para mudar só aquela.
 
 **Assinaturas** — escolha *Todo mês* no lançamento, ou cadastre em *Faturas ›
 Assinaturas*. Nos meses futuros elas aparecem como **previstas** (tracejadas nos
 painéis) e entram na previsão das faturas; quando o mês chega, viram lançamento de
-verdade sozinhas, e você pode ajustar só aquele mês. Se o gasto já estiver lançado
+verdade sozinhas, e você pode ajustar só aquele mês. Se a assinatura mudou de
+valor, edite o lançamento do mês e ligue *Valer também para os próximos meses*: a
+assinatura passa a usar o novo valor dali em diante. Se o gasto já estiver lançado
 no mês, ele é adotado, não duplicado. Encerrar mantém o histórico.
 
 **Faturas futuras** — a aba *Faturas* mostra os próximos 12 meses: quanto de cada
@@ -290,8 +293,8 @@ novos em vez do cache.
 - A previsão só enxerga o que está lançado ou cadastrado: compras que ainda vão
   acontecer (mercado, combustível) não entram. É o piso da fatura, não o valor final.
 - "Completar parcelas" repete o valor da última parcela. Se as próximas tiverem
-  valor diferente (juros, arredondamento da loja), ajuste editando e marcando
-  *aplicar às parcelas seguintes*.
+  valor diferente (juros, arredondamento da loja), edite a primeira delas: a
+  mudança vai para as seguintes.
 - Os indicadores dependem de APIs públicas gratuitas. Se saírem do ar ou mudarem
   de formato, o app mantém os últimos valores e mostra a data — não inventa
   número.

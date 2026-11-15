@@ -596,6 +596,52 @@
     }).sort(function (a, b) { return a.parcela.n - b.parcela.n; });
   }
 
+  /** Campos que uma edicao leva para as parcelas seguintes / meses seguintes da assinatura */
+  function copiarCamposEditaveis(alvo, novo) {
+    alvo.valor = novo.valor;
+    alvo.desc = novo.desc;
+    alvo.categoriaId = novo.categoriaId;
+    if (novo.metodo === 'credito' && alvo.metodo === 'credito' && novo.cartaoId) alvo.cartaoId = novo.cartaoId;
+  }
+
+  /** Parcelas do mesmo grupo depois de `l` que ainda nao foram pagas */
+  function parcelasSeguintes(s, l) {
+    if (!l.parcela || !l.parcela.grupoId) return [];
+    return s.lancamentos.filter(function (x) {
+      return x.id !== l.id && x.parcela && x.parcela.grupoId === l.parcela.grupoId &&
+             x.parcela.n > l.parcela.n && !x.pago;
+    });
+  }
+
+  /**
+   * Leva valor, descricao, categoria e cartao de uma parcela editada para as
+   * seguintes do mesmo grupo (as ja pagas ficam como estao). Muda `s`; devolve quantas mudou.
+   */
+  function aplicarNasParcelasSeguintes(s, orig, novo) {
+    var seguintes = parcelasSeguintes(s, orig);
+    seguintes.forEach(function (x) { copiarCamposEditaveis(x, novo); });
+    return seguintes.length;
+  }
+
+  /**
+   * Edicao de um mes de assinatura que passa a valer dali em diante: a assinatura
+   * (molde dos meses que ainda nao chegaram) e os meses seguintes ja lancados e
+   * nao pagos recebem valor, descricao, categoria e cartao. Muda `s`; devolve
+   * quantos lancamentos ja gravados mudou.
+   */
+  function aplicarNosMesesSeguintes(s, novo) {
+    var r = novo.recorrenteId ? recorrente(s, novo.recorrenteId) : null;
+    if (!r) return 0;
+    copiarCamposEditaveis(r, novo);
+    var mudados = 0;
+    s.lancamentos.forEach(function (x) {
+      if (x.id === novo.id || x.recorrenteId !== r.id || x.mes <= novo.mes || x.pago) return;
+      copiarCamposEditaveis(x, novo);
+      mudados++;
+    });
+    return mudados;
+  }
+
   /**
    * Compras parceladas, agrupadas. `viva` = a ultima parcela lancada e do mes
    * passado para frente (um grupo que parou em 2025 nao e "em andamento").
@@ -869,7 +915,9 @@
     paineis: paineis, resumoPessoa: resumoPessoa, resumoCasal: resumoCasal,
     saldoEmConta: saldoEmConta, totalInvestido: totalInvestido,
     faturaEmAberto: faturaEmAberto, faturasEmAberto: faturasEmAberto,
-    mesFaturaDaCompra: mesFaturaDaCompra, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro,
+    mesFaturaDaCompra: mesFaturaDaCompra,
+    parcelasSeguintes: parcelasSeguintes, aplicarNasParcelasSeguintes: aplicarNasParcelasSeguintes,
+    aplicarNosMesesSeguintes: aplicarNosMesesSeguintes, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro,
     patrimonio: patrimonio,
     serieMensal: serieMensal, seriePatrimonio: seriePatrimonio, serieInvestido: serieInvestido,
     porCategoria: porCategoria, maioresGastos: maioresGastos, porDia: porDia,

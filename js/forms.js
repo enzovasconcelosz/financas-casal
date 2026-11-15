@@ -127,6 +127,7 @@
     var repeticao = op.repeticao || 'unico';
     var modoValor = 'total';          // o valor digitado é o total da compra ou a parcela
     var aplicarSeguintes = false;     // edição de parcela: levar a mudança às próximas
+    var aplicarFuturos = false;       // edição de um mês de assinatura: valer dali em diante
     var salvarENovo = false;
 
     /* --------- campos --------- */
@@ -262,12 +263,16 @@
     if (editando && orig.tipo === 'gasto') {
       if (orig.parcela && orig.parcela.grupoId) {
         var grupo = FC.model.parcelamentos(s).filter(function (g) { return g.grupoId === orig.parcela.grupoId; })[0];
-        var seguintes = grupo ? grupo.itens.filter(function (l) { return l.parcela.n > orig.parcela.n; }).length : 0;
+        var seguintes = FC.model.parcelasSeguintes(s, orig).length;
+        /* parcelas costumam ter o mesmo valor: a mudança vai para as seguintes, a não ser que desligue */
+        aplicarSeguintes = seguintes > 0;
         blocoVinculo = h('div.note', ic('calendar'), h('div.grow',
           h('strong.note__title', 'Parcela ' + orig.parcela.n + ' de ' + orig.parcela.de),
           grupo ? (grupo.itens.length + ' lançadas' + (grupo.faltamLancar > 0 ? ' · faltam ' + grupo.faltamLancar : ' · todas lançadas')) : '',
-          seguintes ? h('div.mt-2', ui.interruptor('Aplicar valor, descrição e categoria às ' + seguintes + ' parcelas seguintes',
-            false, function (v) { aplicarSeguintes = v; })) : null,
+          seguintes ? h('div.mt-2', ui.interruptor(
+            'Alterar também ' + (seguintes === 1 ? 'a parcela seguinte' : 'as ' + seguintes + ' parcelas seguintes') +
+            ' (valor, descrição, categoria e cartão)',
+            true, function (v) { aplicarSeguintes = v; })) : null,
           grupo && grupo.faltamLancar > 0 ? h('button.btn.btn--soft.btn--sm.mt-2', {
             type: 'button',
             onclick: function () { ctrl.fechar(); lancarParcelasQueFaltam(grupo.grupoId); }
@@ -276,7 +281,11 @@
       } else if (orig.recorrenteId && FC.model.recorrente && FC.model.recorrente(s, orig.recorrenteId)) {
         blocoVinculo = h('div.note', ic('refresh'), h('div.grow',
           h('strong.note__title', 'Faz parte de uma assinatura'),
-          'Mudanças aqui valem só para este mês. ',
+          h('div.mt-2', ui.interruptor(
+            'Valer também para os próximos meses (a assinatura mudou de valor)',
+            false, function (v) { aplicarFuturos = v; })),
+          h('div.dim.mt-2', { style: { fontSize: 'var(--fs-xs)' } },
+            'Desligado, a mudança vale só para este mês.'),
           h('button.btn.btn--soft.btn--sm.mt-2', {
             type: 'button', onclick: function () { ctrl.fechar(); assinatura({ id: orig.recorrenteId }); }
           }, ic('pencil'), 'Editar a assinatura')
@@ -478,11 +487,11 @@
           }
           /* levar a mudança às próximas parcelas do mesmo grupo */
           if (aplicarSeguintes && orig.parcela && orig.parcela.grupoId) {
-            st.lancamentos.forEach(function (l) {
-              if (l.parcela && l.parcela.grupoId === orig.parcela.grupoId && l.parcela.n > orig.parcela.n) {
-                l.valor = novo.valor; l.desc = novo.desc; l.categoriaId = novo.categoriaId;
-              }
-            });
+            FC.model.aplicarNasParcelasSeguintes(st, orig, novo);
+          }
+          /* assinatura que mudou de valor: vale dali em diante */
+          if (aplicarFuturos && novo.recorrenteId) {
+            FC.model.aplicarNosMesesSeguintes(st, novo);
           }
         } else if (vaiParcelar) {
           FC.model.gerarParcelas(novo, de, {
@@ -500,7 +509,8 @@
       });
 
       ui.toast(
-        editando ? (aplicarSeguintes ? 'Parcela e seguintes atualizadas.' : 'Lançamento atualizado.')
+        editando ? (aplicarSeguintes ? 'Parcela e seguintes atualizadas.'
+                    : aplicarFuturos ? 'Atualizado deste mês em diante.' : 'Lançamento atualizado.')
                  : vaiParcelar ? qtdCriada + (qtdCriada === 1 ? ' parcela lançada.' : ' parcelas lançadas.')
                  : vaiRepetir ? 'Lançado e agendado todo mês.'
                  : 'Lançado: ' + fmt.brl(valor),
