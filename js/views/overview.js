@@ -741,25 +741,91 @@
     );
   }
 
+  /* faturas abertas no card "Quem está devendo" (fica entre um redesenho e outro) */
+  var gruposAbertos = {};
+
+  /** Marca como acertados (ou não) os lançamentos de terceiro, com Desfazer */
+  function acertar(itens, valor) {
+    var ids = itens.map(function (l) { return l.id; });
+    FC.store.atualizar(function (st) {
+      st.lancamentos.forEach(function (l) { if (ids.indexOf(l.id) >= 0) l.reembolsado = valor; });
+    });
+    FC.store.guardarDesfazer('acerto', function (st) {
+      st.lancamentos.forEach(function (l) { if (ids.indexOf(l.id) >= 0) l.reembolsado = !valor; });
+    });
+    var soma = fmt.sumBy(itens, function (l) { return l.valor; });
+    ui.toast((itens.length === 1 ? '1 compra acertada' : itens.length + ' compras acertadas') + ': ' + fmt.brl(soma), 'ok', 6000,
+      { texto: 'Desfazer', fn: function () { FC.store.desfazer(); } });
+  }
+
+  function grupoTerceiro(s, t, g) {
+    var k = t.id + '|' + g.chave;
+    var aberto = !!gruposAbertos[k];
+    var mesTxt = fmt.monthLabel(g.mes, true);
+    var titulo = g.fatura ? g.rotulo + ' · fatura ' + mesTxt : g.rotulo + ' · ' + mesTxt;
+    var sub = g.vence
+      ? (g.vencida ? 'venceu ' : 'vence ') + fmt.dateBR(g.vence).slice(0, 5)
+      : (g.fatura ? 'sem dia de vencimento' : 'pago na hora');
+    sub += ' · ' + g.itens.length + (g.itens.length === 1 ? ' compra' : ' compras');
+
+    return h('div.debt' + (aberto ? '.is-open' : ''),
+      h('button.debt__head', {
+        type: 'button', 'aria-expanded': String(aberto),
+        onclick: function () { gruposAbertos[k] = !aberto; FC.app.redesenhar(); }
+      },
+        ic(g.fatura ? 'card' : (g.rotulo === 'Pix' ? 'pix' : 'cash')),
+        h('div.grow', { style: { minWidth: '0', textAlign: 'left' } },
+          h('div.debt__t', titulo),
+          h('div.debt__s' + (g.vencida ? '.is-late' : ''), sub)
+        ),
+        h('span.num.debt__v', fmt.brl(g.total)),
+        ic('chevDown', 'debt__chev')
+      ),
+      aberto ? h('div.debt__body',
+        g.itens.map(function (l) {
+          return h('div.debt__item',
+            ui.check(false, function () { acertar([l], true); }, 'Marcar como acertado'),
+            h('button.debt__desc', {
+              type: 'button', title: 'Editar', onclick: function () { FC.forms.lancamento({ id: l.id }); }
+            },
+              h('span.rowdesc__txt', l.desc),
+              h('span.dim', fmt.dateBR(l.data).slice(0, 5) + (l.parcela ? ' · ' + l.parcela.n + '/' + l.parcela.de : ''))
+            ),
+            h('span.num', fmt.brl(l.valor))
+          );
+        }),
+        h('button.btn.btn--soft.btn--sm.mt-2', {
+          type: 'button', onclick: function () { acertar(g.itens, true); }
+        }, ic('check'), g.itens.length === 1 ? 'Marcar como acertado' : 'Acertar ' + (g.fatura ? 'a fatura' : 'tudo') + ' (' + fmt.brl(g.total) + ')')
+      ) : null
+    );
+  }
+
   function cardTerceiros(s, terceiros) {
     return h('div.card',
       h('div.card__head',
-        h('div.card__title', 'Quem está devendo'),
-        h('div.card__sub', 'cartão emprestado')
+        h('div', h('div.card__title', 'Quem está devendo'),
+          h('div.card__sub', 'cartão emprestado · por fatura'))
       ),
       terceiros.length
         ? h('div.col',
             terceiros.map(function (t) {
-              return h('div.row.row--between', { style: { padding: '6px 0' } },
-                h('div.row',
-                  h('span.lock__acc__av', { style: { width: '30px', height: '30px', fontSize: 'var(--fs-xs)' } },
-                    fmt.initials(t.nome)),
-                  h('div',
-                    h('div', { style: { fontWeight: '600', fontSize: 'var(--fs-sm)' } }, t.nome),
-                    h('div.dim', { style: { fontSize: 'var(--fs-xs)' } }, t.itens + (t.itens === 1 ? ' compra' : ' compras'))
-                  )
+              return h('div.col', { style: { gap: '6px', padding: '4px 0 8px' } },
+                h('div.row.row--between',
+                  h('div.row',
+                    h('span.lock__acc__av', { style: { width: '30px', height: '30px', fontSize: 'var(--fs-xs)' } },
+                      fmt.initials(t.nome)),
+                    h('div',
+                      h('div', { style: { fontWeight: '600', fontSize: 'var(--fs-sm)' } }, t.nome),
+                      h('div.dim', { style: { fontSize: 'var(--fs-xs)' } },
+                        t.abertos + (t.abertos === 1 ? ' compra em aberto' : ' compras em aberto') +
+                        (t.itens > t.abertos ? ' · ' + (t.itens - t.abertos) +
+                          (t.itens - t.abertos === 1 ? ' já acertada' : ' já acertadas') : ''))
+                    )
+                  ),
+                  h('span.num', { style: { fontWeight: '680', color: 'var(--warn)' } }, fmt.brl(t.aberto))
                 ),
-                h('span.num', { style: { fontWeight: '680', color: 'var(--warn)' } }, fmt.brl(t.aberto))
+                t.grupos.map(function (g) { return grupoTerceiro(s, t, g); })
               );
             }),
             h('hr.hr--soft'),

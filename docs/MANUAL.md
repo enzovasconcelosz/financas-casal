@@ -139,6 +139,12 @@ gasto sai dos seus totais, entra na fatura (porque você precisa pagar) e aparec
 como "a receber" até você marcar o ✓ de acertado — que é a coluna *Outros* da
 sua planilha, com a *SOMA PARCIAL*.
 
+Na aba *Casal*, **Quem está devendo** separa o que cada pessoa deve por fatura:
+"Itaú · fatura out/26 · venceu 10/11" (em vermelho quando já venceu), com o total
+de cada uma. Toque na fatura para ver as compras e marcar uma por uma, ou
+*Acertar a fatura* de uma vez (com *Desfazer*). Fora do cartão, aparece a forma e
+o mês ("Pix · nov/26").
+
 ### Fatura
 
 No painel de crédito, **Marcar fatura como paga** faz duas coisas: marca os itens

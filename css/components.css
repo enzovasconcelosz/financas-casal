@@ -722,3 +722,27 @@ tr:hover .rowacts, tr:focus-within .rowacts { opacity: 1; }
   .tbl--gastos .only-sm { display: block; margin-top: 2px; }
   .tbl--gastos td.tbl__desc { width: auto; }
 }
+
+/* ---------------------------- QUEM ESTA DEVENDO (por fatura) ---------------------------- */
+.debt { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface-2); overflow: hidden; }
+.debt__head {
+  width: 100%; display: flex; align-items: center; gap: var(--sp-2);
+  padding: 8px var(--sp-3); border: 0; background: transparent; color: var(--text);
+  font: inherit; cursor: pointer;
+}
+.debt__head:hover { background: var(--surface-hi); }
+.debt__head > svg { width: 16px; height: 16px; flex: none; color: var(--text-3); }
+.debt__t { font-size: var(--fs-sm); font-weight: 620; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.debt__s { font-size: var(--fs-xs); color: var(--text-3); }
+.debt__s.is-late { color: var(--neg); }
+.debt__v { font-size: var(--fs-sm); font-weight: 680; color: var(--warn); white-space: nowrap; }
+.debt__head > .debt__chev { transition: transform var(--t-fast) var(--ease); }
+.debt.is-open .debt__chev { transform: rotate(180deg); }
+.debt__body { padding: 4px var(--sp-3) var(--sp-3); border-top: 1px solid var(--line-soft); }
+.debt__item { display: flex; align-items: center; gap: var(--sp-2); padding: 5px 0; font-size: var(--fs-sm); }
+.debt__desc {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start;
+  border: 0; background: transparent; color: var(--text); font: inherit; cursor: pointer; text-align: left; padding: 0;
+}
+.debt__desc .rowdesc__txt { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.debt__desc .dim { font-size: var(--fs-xs); }

@@ -314,21 +314,67 @@
     );
   }
 
-  /** Quanto cada terceiro deve */
-  function porTerceiro(s) {
+  /** Dia em que vence a fatura do mes `mes` desse cartao (sempre no mes seguinte); null sem vencimento */
+  function vencimentoDaFatura(c, mes) {
+    if (!c || !c.vencimento) return null;
+    var m = fmt.addMonths(mes, 1);
+    return m + '-' + fmt.pad(Math.min(c.vencimento, fmt.daysInMonth(m)));
+  }
+
+  /**
+   * Quanto cada terceiro deve. `grupos` separa o que esta em aberto por fatura
+   * (cartao + mes, com o vencimento) — ou por forma e mes, fora do cartao —,
+   * da fatura mais antiga para a mais nova.
+   */
+  function porTerceiro(s, hojeISO) {
+    var hoje = hojeISO || fmt.todayISO();
     var mapa = {};
     s.lancamentos.filter(ehTerceiro).forEach(function (l) {
       var k = l.terceiroId;
-      if (!mapa[k]) mapa[k] = { id: k, nome: nomeTerceiro(s, k), aberto: 0, pago: 0, itens: 0 };
-      mapa[k].itens++;
-      if (l.reembolsado) mapa[k].pago += Number(l.valor) || 0;
-      else mapa[k].aberto += Number(l.valor) || 0;
+      var t = mapa[k] = mapa[k] || { id: k, nome: nomeTerceiro(s, k), aberto: 0, pago: 0, itens: 0, abertos: 0, grupos: {} };
+      var v = Number(l.valor) || 0;
+      t.itens++;
+      if (l.reembolsado) { t.pago += v; return; }
+      t.aberto += v;
+      t.abertos++;
+
+      var cid = cartaoIdDoGasto(s, l);
+      var chave = (cid || l.metodo || 'outro') + '|' + l.mes;
+      var g = t.grupos[chave];
+      if (!g) {
+        var c = cid ? cartao(s, cid) : null;
+        var vence = c ? vencimentoDaFatura(c, l.mes) : null;
+        g = t.grupos[chave] = {
+          chave: chave,
+          cartaoId: cid,
+          rotulo: cid ? ((c && c.nome) || 'Cartão') : nomeMetodo(l.metodo),
+          fatura: !!cid,
+          mes: l.mes,
+          vence: vence,
+          vencida: !!vence && vence < hoje,
+          total: 0,
+          itens: []
+        };
+      }
+      g.total += v;
+      g.itens.push(l);
     });
+
     return Object.keys(mapa).map(function (k) {
-      mapa[k].aberto = round2(mapa[k].aberto);
-      mapa[k].pago = round2(mapa[k].pago);
-      mapa[k].total = round2(mapa[k].aberto + mapa[k].pago);
-      return mapa[k];
+      var t = mapa[k];
+      t.aberto = round2(t.aberto);
+      t.pago = round2(t.pago);
+      t.total = round2(t.aberto + t.pago);
+      t.grupos = Object.keys(t.grupos).map(function (c) {
+        var g = t.grupos[c];
+        g.total = round2(g.total);
+        g.itens.sort(function (a, b) { return a.data < b.data ? -1 : (a.data > b.data ? 1 : 0); });
+        return g;
+      }).sort(function (a, b) {
+        if (a.mes !== b.mes) return a.mes < b.mes ? -1 : 1;
+        return a.rotulo.localeCompare(b.rotulo, 'pt-BR');
+      });
+      return t;
     }).sort(function (a, b) { return b.aberto - a.aberto; });
   }
 
@@ -1017,7 +1063,7 @@
     faturaEmAberto: faturaEmAberto, faturasEmAberto: faturasEmAberto,
     mesFaturaDaCompra: mesFaturaDaCompra,
     parcelasSeguintes: parcelasSeguintes, aplicarNasParcelasSeguintes: aplicarNasParcelasSeguintes,
-    aplicarNosMesesSeguintes: aplicarNosMesesSeguintes, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro,
+    aplicarNosMesesSeguintes: aplicarNosMesesSeguintes, aReceberTotal: aReceberTotal, porTerceiro: porTerceiro, vencimentoDaFatura: vencimentoDaFatura,
     patrimonio: patrimonio,
     serieMensal: serieMensal, seriePatrimonio: seriePatrimonio, serieInvestido: serieInvestido,
     porCategoria: porCategoria, maioresGastos: maioresGastos, porDia: porDia,
